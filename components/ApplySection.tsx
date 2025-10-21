@@ -24,7 +24,7 @@ export default function ApplySection() {
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <a
             className="btn"
-            href="https://forms.gle/REPLACE_ME"
+            href="https://forms.gle/qVeN9xv8aiADqDmx9"
             target="_blank"
             rel="noopener"
           >
