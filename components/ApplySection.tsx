@@ -30,9 +30,6 @@ export default function ApplySection() {
           >
             무료 도입 신청
           </a>
-          <a className="btn btn-outline" href="mailto:carawoo96@gmail.com">
-            이메일 문의
-          </a>
         </div>
       </div>
     </section>
