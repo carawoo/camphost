@@ -21,7 +21,7 @@ export default function Footer() {
           className="muted footer-links"
           style={{ display: 'flex', gap: '16px', alignItems: 'center' }}
         >
-          <a href="https://instagram.com/REPLACE_ME" target="_blank" rel="noopener">
+          <a href="https://www.instagram.com/odoichon_official/" target="_blank" rel="noopener">
             Instagram
           </a>
           <span>·</span>

@@ -21,6 +21,8 @@ body {
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Pretendard", "Apple SD Gothic Neo", Roboto, Segoe UI, Helvetica, Arial, sans-serif;
   letter-spacing: -0.2px;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 a {
@@ -29,9 +31,12 @@ a {
 }
 
 .wrap {
-  max-width: 1120px;
+  width: 100%;
+  max-width: calc(100vw - 12vw);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0;
+  min-width: 320px;
+  box-sizing: border-box;
 }
 
 .btn {
@@ -87,6 +92,14 @@ a {
 
 .grid-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* 데스크톱 기본 그리드 */
+@media (min-width: 921px) {
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
 }
 
 .muted {
@@ -160,12 +173,12 @@ header .inner {
 }
 
 .section {
-  padding: 48px 0;
+  padding: 60px 0 48px 0;
 }
 
 .title {
   font-size: 28px;
-  margin: 0 0 14px;
+  margin: 40px 0 14px 0;
 }
 
 .subtitle {
@@ -209,8 +222,21 @@ header .inner {
 }
 
 .warn {
-  background: #FFF5F1;
-  border-color: #FFD8C9;
+  background: #FFEBEE;
+  border-color: #FFCDD2;
+  border-width: 2px;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.1);
+}
+
+.warn h3 {
+  color: #D32F2F;
+  position: relative;
+}
+
+.warn h3::before {
+  content: "⚠️";
+  margin-right: 8px;
+  font-size: 18px;
 }
 
 .table {
@@ -229,9 +255,20 @@ header .inner {
   border-bottom: 1px solid var(--line);
 }
 
+.table td:nth-child(2) {
+  background: rgba(47, 125, 50, 0.08);
+  color: var(--success);
+  font-weight: 500;
+}
+
 .table th {
   background: var(--soft);
   text-align: left;
+}
+
+.table th:nth-child(2) {
+  background: var(--success);
+  color: white;
 }
 
 .table tr:last-child td {
@@ -248,14 +285,16 @@ header .inner {
 }
 
 footer {
-  padding: 36px 0 80px;
+  padding: 36px 0 120px;
+  margin-bottom: 60px !important;
   color: var(--sub);
 }
 
 /* 태블릿 */
-@media (max-width: 920px) {
+@media (max-width: 920px) and (min-width: 769px) {
   .wrap {
-    padding: 0 24px;
+    max-width: calc(100vw - 10vw);
+    padding: 0;
   }
   
   .grid-3 {
@@ -268,13 +307,69 @@ footer {
     font-size: 36px;
   }
   .hero {
-    padding: 60px 0 36px;
+    padding: 80px 0 36px;
   }
   .section {
-    padding: 40px 0;
+    padding: 48px 0 40px 0;
   }
   .title {
     font-size: 26px;
+    margin-top: 32px;
+  }
+}
+
+/* 태블릿 중간 사이즈 - 카드 2열 배치 */
+@media (max-width: 768px) and (min-width: 641px) {
+  .wrap {
+    max-width: calc(100vw - 12vw);
+    padding: 0;
+  }
+  
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 18px;
+  }
+  
+  .hero h1 {
+    font-size: 32px;
+  }
+  .hero {
+    padding: 60px 0 32px;
+  }
+  .section {
+    padding: 44px 0 36px 0;
+  }
+  .title {
+    font-size: 24px;
+    margin-top: 28px;
+  }
+  
+  /* 카드 최적화 */
+  .card {
+    padding: 18px 16px;
+  }
+  .card h3 {
+    font-size: 17px;
+    margin-bottom: 8px;
+  }
+  .card p {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  
+  /* 히어로 버튼 */
+  .hero .cta {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .hero .cta a {
+    width: 100%;
+  }
+  
+  /* Chip 최적화 */
+  .chip {
+    font-size: 11px;
+    padding: 5px 10px;
   }
 }
 
@@ -283,11 +378,25 @@ footer {
   html,
   body {
     overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  * {
+    box-sizing: border-box;
   }
   
   .wrap {
-    padding: 0 20px !important;
+    max-width: calc(100vw - 12vw);
+    padding: 0 !important;
     width: 100%;
+    margin: 0 auto;
+    min-width: 320px;
+  }
+  
+  main {
+    width: 100%;
+    overflow-x: hidden;
   }
   
   /* 헤더 */
@@ -305,7 +414,7 @@ footer {
   
   /* 히어로 */
   .hero {
-    padding: 40px 0 32px;
+    padding: 50px 0 32px;
   }
   .hero h1 {
     font-size: 30px;
@@ -346,11 +455,11 @@ footer {
   
   /* 섹션 */
   .section {
-    padding: 36px 0;
+    padding: 40px 0 36px 0;
   }
   .title {
     font-size: 24px;
-    margin-bottom: 12px;
+    margin: 32px 0 12px 0;
     line-height: 1.3;
   }
   .subtitle {
@@ -378,9 +487,18 @@ footer {
     line-height: 1.6;
   }
   
+  /* 모바일에서 warn 카드 스타일 */
+  .warn h3::before {
+    font-size: 16px;
+  }
+  
   /* 그리드 */
   .grid {
     gap: 14px;
+  }
+  
+  .grid-3 {
+    grid-template-columns: 1fr !important;
   }
   
   /* 리스트 */
@@ -402,6 +520,7 @@ footer {
     -webkit-overflow-scrolling: touch;
     margin: 0 -20px;
     padding: 0 20px;
+    width: calc(100% + 40px);
   }
   .table {
     font-size: 13px;
@@ -440,13 +559,16 @@ footer {
   
   /* Footer */
   footer {
-    padding: 28px 0 60px;
+    padding: 28px 0 80px;
+    margin-bottom: 40px !important;
     font-size: 13px;
+    width: 100%;
   }
   .footer-content {
     flex-direction: column;
     align-items: flex-start !important;
     gap: 20px !important;
+    width: 100%;
   }
   .footer-links {
     flex-direction: column !important;
@@ -460,6 +582,20 @@ footer {
   /* hr */
   .hr {
     margin: 28px 0;
+    width: 100%;
+  }
+  
+  /* 푸터 추가 마진 */
+  footer::after {
+    content: "";
+    display: block;
+    height: 40px;
+  }
+  
+  /* 모든 섹션에 width 제한 */
+  section {
+    width: 100%;
+    max-width: 100%;
   }
 }
 

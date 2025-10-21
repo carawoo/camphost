@@ -19,7 +19,7 @@ export default function Home() {
         <SolutionSection />
         <BeforeAfterSection />
         <ImpactSection />
-        <TestimonialSection />
+        {/* <TestimonialSection /> */}
         <FAQSection />
         <ApplySection />
         <div className="hr" />
