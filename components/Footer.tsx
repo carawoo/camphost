@@ -25,7 +25,7 @@ export default function Footer() {
             Instagram
           </a>
           <span>·</span>
-          <a href="mailto:hello@odoichon.com">hello@odoichon.com</a>
+          <a href="mailto:carawoo96@gmail.com">carawoo96@gmail.com</a>
           <span>·</span>
           <span>© 2025 ODOICHON</span>
         </div>
