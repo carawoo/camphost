@@ -25,7 +25,7 @@ export default function CheckinDemo() {
 
   const steps = [
     {
-      title: "고객이 이름·연락처 입력",
+      title: "예약자 이름, 연락처 입력",
       content: (
         <div className="demo-form">
           <h3>체크인 정보 입력</h3>
