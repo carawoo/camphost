@@ -12,13 +12,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 임시 로그인 로직 (실제로는 데이터베이스와 연동)
-    const validCredentials = {
+    const validCredentials: Record<string, string> = {
       '테스트캠핑장': 'test123',
       '오도이촌캠핑장': 'odoichon2025',
       'demo': 'demo123'
     }
 
-    if (validCredentials[campgroundName] === password) {
+    if ((validCredentials[campgroundName] ?? '') === password) {
       return NextResponse.json({
         success: true,
         message: '로그인 성공',
