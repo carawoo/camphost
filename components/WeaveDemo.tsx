@@ -187,20 +187,22 @@ export default function WeaveDemo() {
           )}
         </div>
         
-        <div className="demo-features">
-          <div className="feature">
-            <span className="tick">✓</span>
-            <span>예약/체크인/문의 데이터를 엮어 월간 리포트 제공</span>
+        {viewMode === 'owner' && (
+          <div className="demo-features">
+            <div className="feature">
+              <span className="tick">✓</span>
+              <span>예약/체크인/문의 데이터를 엮어 월간 리포트 제공</span>
+            </div>
+            <div className="feature">
+              <span className="tick">✓</span>
+              <span>"이번 달 손님이 왜 줄었는가"를 데이터로 설명</span>
+            </div>
+            <div className="feature">
+              <span className="tick">✓</span>
+              <span>날씨·요일·타깃별 패턴 분석</span>
+            </div>
           </div>
-          <div className="feature">
-            <span className="tick">✓</span>
-            <span>"이번 달 손님이 왜 줄었는가"를 데이터로 설명</span>
-          </div>
-          <div className="feature">
-            <span className="tick">✓</span>
-            <span>날씨·요일·타깃별 패턴 분석</span>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   )

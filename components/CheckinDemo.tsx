@@ -284,20 +284,22 @@ export default function CheckinDemo() {
           )}
         </div>
         
-        <div className="demo-features">
-          <div className="feature">
-            <span className="tick">✓</span>
-            <span>사장님이 예약 플랫폼에서 확인한 예약을 시스템에 등록</span>
+        {viewMode === 'owner' && (
+          <div className="demo-features">
+            <div className="feature">
+              <span className="tick">✓</span>
+              <span>사장님이 예약 플랫폼에서 확인한 예약을 시스템에 등록</span>
+            </div>
+            <div className="feature">
+              <span className="tick">✓</span>
+              <span>야간 입실/늦은 퇴실도 무리 없이 처리</span>
+            </div>
+            <div className="feature">
+              <span className="tick">✓</span>
+              <span>종이·전화·대기 제거</span>
+            </div>
           </div>
-          <div className="feature">
-            <span className="tick">✓</span>
-            <span>야간 입실/늦은 퇴실도 무리 없이 처리</span>
-          </div>
-          <div className="feature">
-            <span className="tick">✓</span>
-            <span>종이·전화·대기 제거</span>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   )

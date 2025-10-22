@@ -140,20 +140,22 @@ export default function OndamDemo() {
           )}
         </div>
         
-        <div className="demo-features">
-          <div className="feature">
-            <span className="tick">✓</span>
-            <span>사장님 부재 중에도 고객이 메시지 남김</span>
+        {viewMode === 'owner' && (
+          <div className="demo-features">
+            <div className="feature">
+              <span className="tick">✓</span>
+              <span>사장님 부재 중에도 고객이 메시지 남김</span>
+            </div>
+            <div className="feature">
+              <span className="tick">✓</span>
+              <span>자주 묻는 질문 자동응답 / 문자 알림</span>
+            </div>
+            <div className="feature">
+              <span className="tick">✓</span>
+              <span>안내페이지(지도·매너타임·분리수거) 자동 제공</span>
+            </div>
           </div>
-          <div className="feature">
-            <span className="tick">✓</span>
-            <span>자주 묻는 질문 자동응답 / 문자 알림</span>
-          </div>
-          <div className="feature">
-            <span className="tick">✓</span>
-            <span>안내페이지(지도·매너타임·분리수거) 자동 제공</span>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   )
