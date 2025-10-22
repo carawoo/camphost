@@ -10,7 +10,11 @@ export default function SolutionSection() {
           <ul className="list">
             <li>
               <span className="tick">✓</span>
-              <span>고객이 이름·연락처 입력 → 계좌이체 자동 대조 → 입실 완료</span>
+              <span>사장님이 예약 플랫폼에서 확인한 예약을 시스템에 등록</span>
+            </li>
+            <li>
+              <span className="tick">✓</span>
+              <span>고객이 이름·연락처 입력 → 예약 리스트 자동 매칭 → 입실 완료</span>
             </li>
             <li>
               <span className="tick">✓</span>

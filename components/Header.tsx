@@ -13,6 +13,9 @@ export default function Header() {
           <Link href="#apply" className="btn">
             무료 도입 신청
           </Link>
+          <Link href="/admin" className="btn btn-outline">
+            캠지기 센터
+          </Link>
         </nav>
       </div>
     </header>

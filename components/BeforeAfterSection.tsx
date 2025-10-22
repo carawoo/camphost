@@ -14,7 +14,7 @@ export default function BeforeAfterSection() {
           <tr>
             <td>수기 체크인, 입금 확인 전화</td>
             <td>
-              <b>무인 체크인</b> + 계좌이체 자동 대조
+              <b>무인 체크인</b> + 예약 리스트 자동 매칭
             </td>
           </tr>
           <tr>
