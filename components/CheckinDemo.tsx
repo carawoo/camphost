@@ -18,6 +18,14 @@ export default function CheckinDemo() {
     site: '',
   })
 
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingReservation, setEditingReservation] = useState({
+    name: '',
+    phone: '',
+    site: '',
+    date: ''
+  })
+
   const handleAddReservation = () => {
     const trimmed = {
       name: newReservation.name.trim(),
@@ -41,6 +49,40 @@ export default function CheckinDemo() {
     ])
     setNewReservation({ name: '', phone: '', site: '' })
     alert('예약이 추가되었습니다.')
+  }
+
+  const handleDeleteReservation = (id: number) => {
+    if (!confirm('이 예약을 삭제하시겠습니까?')) return
+    setReservations(prev => prev.filter(r => r.id !== id))
+  }
+
+  const handleStartEdit = (id: number) => {
+    const target = reservations.find(r => r.id === id)
+    if (!target) return
+    setEditingId(id)
+    setEditingReservation({ name: target.name, phone: target.phone, site: target.site, date: target.date })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setEditingReservation({ name: '', phone: '', site: '', date: '' })
+  }
+
+  const handleSaveEdit = () => {
+    if (editingId === null) return
+    const trimmed = {
+      name: editingReservation.name.trim(),
+      phone: editingReservation.phone.trim(),
+      site: editingReservation.site.trim(),
+      date: editingReservation.date.trim(),
+    }
+    if (!trimmed.name || !trimmed.phone || !trimmed.site || !trimmed.date) {
+      alert('이름, 연락처, 사이트, 날짜를 모두 입력해주세요.')
+      return
+    }
+    setReservations(prev => prev.map(r => r.id === editingId ? { ...r, ...trimmed } : r))
+    handleCancelEdit()
+    alert('예약이 수정되었습니다.')
   }
 
   // 2번 단계에서 1초 후 자동으로 3번 단계로 넘어가기
@@ -126,12 +168,49 @@ export default function CheckinDemo() {
       <div className="reservation-list">
         {reservations.map(res => (
           <div key={res.id} className="reservation-item">
-            <div className="reservation-info">
-              <strong>{res.name}</strong>
-              <span>{res.phone}</span>
-              <span>사이트: {res.site}</span>
-              <span>{res.date}</span>
-            </div>
+            {editingId === res.id ? (
+              <div className="reservation-info" style={{ width: '100%' }}>
+                <input
+                  type="text"
+                  placeholder="이름"
+                  value={editingReservation.name}
+                  onChange={(e) => setEditingReservation({ ...editingReservation, name: e.target.value })}
+                />
+                <input
+                  type="tel"
+                  placeholder="연락처"
+                  value={editingReservation.phone}
+                  onChange={(e) => setEditingReservation({ ...editingReservation, phone: e.target.value })}
+                />
+                <input
+                  type="text"
+                  placeholder="사이트"
+                  value={editingReservation.site}
+                  onChange={(e) => setEditingReservation({ ...editingReservation, site: e.target.value })}
+                />
+                <input
+                  type="date"
+                  placeholder="날짜"
+                  value={editingReservation.date}
+                  onChange={(e) => setEditingReservation({ ...editingReservation, date: e.target.value })}
+                />
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                  <button className="btn-small" onClick={handleSaveEdit}>저장</button>
+                  <button className="btn-small" onClick={handleCancelEdit} style={{ background: 'var(--line)', color: 'var(--ink)' }}>취소</button>
+                </div>
+              </div>
+            ) : (
+              <div className="reservation-info" style={{ width: '100%', alignItems: 'center' }}>
+                <strong>{res.name}</strong>
+                <span>{res.phone}</span>
+                <span>사이트: {res.site}</span>
+                <span>{res.date}</span>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                  <button className="btn-small" onClick={() => handleStartEdit(res.id)}>수정</button>
+                  <button className="btn-small" onClick={() => handleDeleteReservation(res.id)} style={{ background: '#D32F2F' }}>삭제</button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
