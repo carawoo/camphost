@@ -12,6 +12,37 @@ export default function CheckinDemo() {
     { id: 2, name: '이영희', phone: '010-9876-5432', site: 'B-03', date: '2025-01-25' },
   ])
 
+  const [newReservation, setNewReservation] = useState({
+    name: '',
+    phone: '',
+    site: '',
+  })
+
+  const handleAddReservation = () => {
+    const trimmed = {
+      name: newReservation.name.trim(),
+      phone: newReservation.phone.trim(),
+      site: newReservation.site.trim(),
+    }
+    if (!trimmed.name || !trimmed.phone || !trimmed.site) {
+      alert('고객 이름, 연락처, 사이트 번호를 모두 입력해주세요.')
+      return
+    }
+    const nextId = reservations.length ? Math.max(...reservations.map(r => r.id)) + 1 : 1
+    const today = new Date()
+    const yyyy = today.getFullYear()
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const dd = String(today.getDate()).padStart(2, '0')
+    const dateStr = `${yyyy}-${mm}-${dd}`
+
+    setReservations(prev => [
+      ...prev,
+      { id: nextId, name: trimmed.name, phone: trimmed.phone, site: trimmed.site, date: dateStr }
+    ])
+    setNewReservation({ name: '', phone: '', site: '' })
+    alert('예약이 추가되었습니다.')
+  }
+
   // 2번 단계에서 1초 후 자동으로 3번 단계로 넘어가기
   useEffect(() => {
     if (step === 1) {
@@ -25,7 +56,7 @@ export default function CheckinDemo() {
 
   const steps = [
     {
-      title: "예약자 이름, 연락처 입력",
+      title: "고객이 이름·연락처 입력",
       content: (
         <div className="demo-form">
           <h3>체크인 정보 입력</h3>
@@ -107,10 +138,25 @@ export default function CheckinDemo() {
       <div className="add-reservation">
         <h4>새 예약 추가</h4>
         <p className="helper-text">네이버/캠핏/땡큐캠핑에서 확인한 예약 정보를 입력하세요</p>
-        <input type="text" placeholder="고객 이름" />
-        <input type="tel" placeholder="연락처" />
-        <input type="text" placeholder="사이트 번호" />
-        <button className="btn">예약 추가</button>
+        <input
+          type="text"
+          placeholder="고객 이름"
+          value={newReservation.name}
+          onChange={(e) => setNewReservation({ ...newReservation, name: e.target.value })}
+        />
+        <input
+          type="tel"
+          placeholder="연락처"
+          value={newReservation.phone}
+          onChange={(e) => setNewReservation({ ...newReservation, phone: e.target.value })}
+        />
+        <input
+          type="text"
+          placeholder="사이트 번호"
+          value={newReservation.site}
+          onChange={(e) => setNewReservation({ ...newReservation, site: e.target.value })}
+        />
+        <button className="btn" onClick={handleAddReservation}>예약 추가</button>
       </div>
     </div>
   )
