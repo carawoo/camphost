@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function CheckinDemo() {
   const [viewMode, setViewMode] = useState<'owner' | 'customer'>('owner')
@@ -11,6 +11,17 @@ export default function CheckinDemo() {
     { id: 1, name: '김철수', phone: '010-1234-5678', site: 'A-15', date: '2025-01-25' },
     { id: 2, name: '이영희', phone: '010-9876-5432', site: 'B-03', date: '2025-01-25' },
   ])
+
+  // 2번 단계에서 1초 후 자동으로 3번 단계로 넘어가기
+  useEffect(() => {
+    if (step === 1) {
+      const timer = setTimeout(() => {
+        setStep(2)
+      }, 1000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [step])
 
   const steps = [
     {
@@ -51,12 +62,6 @@ export default function CheckinDemo() {
               사전 등록된 예약 리스트와 매칭합니다
             </small>
           </div>
-          <button 
-            className="btn"
-            onClick={() => setStep(2)}
-          >
-            매칭 완료
-          </button>
         </div>
       )
     },
