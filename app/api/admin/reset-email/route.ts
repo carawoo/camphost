@@ -26,14 +26,18 @@ export async function POST(request: NextRequest) {
       </div>
     `
 
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: 'onboarding@resend.dev',
       to: 'carawoo96@gmail.com',
       subject,
       html
     })
 
-    return NextResponse.json({ success: true, id: data.id })
+    if (error) {
+      throw error
+    }
+
+    return NextResponse.json({ success: true, id: data?.id })
   } catch (error) {
     console.error('reset-email error', error)
     return NextResponse.json({ error: '전송 실패' }, { status: 500 })
