@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     console.log('이메일 전송 시도:', { campgroundName, managerName, phone, timestamp })
     
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: 'onboarding@resend.dev',
       to: 'carawoo96@gmail.com',
       subject: '오도이촌 데모 보기 신청',
@@ -56,8 +56,12 @@ export async function POST(request: NextRequest) {
       `
     })
 
+    if (error) {
+      throw error
+    }
+
     console.log('이메일 전송 성공:', data)
-    return NextResponse.json({ success: true, messageId: data.id })
+    return NextResponse.json({ success: true, messageId: data?.id })
   } catch (error) {
     console.error('이메일 전송 오류:', error)
     return NextResponse.json(
