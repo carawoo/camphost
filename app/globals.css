@@ -127,6 +127,11 @@ header .inner {
   justify-content: space-between;
   padding: 14px 0;
 }
+/* 헤더 내 '캠지기 센터' 링크 색상 지정 */
+header nav a[href="/admin"] {
+  color: #444444;
+  border-color: #444444;
+}
 
 .logo {
   display: flex;
@@ -191,6 +196,8 @@ header .inner {
   color: var(--sub);
   letter-spacing: .06em;
   text-transform: uppercase;
+  display: inline-block;
+  margin-top: 8px; /* 히어로 상단에 여백 추가 */
 }
 
 .list {
@@ -411,6 +418,31 @@ footer {
     width: 24px;
     height: 24px;
   }
+  /* 상단 버튼을 텍스트 링크 형태로 (모바일) */
+  header nav {
+    gap: 14px;
+  }
+  header nav .btn,
+  header nav .btn-outline {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    min-height: unset !important;
+    border-radius: 0 !important;
+    color: var(--success) !important;
+    margin-top: 20px !important;   /* 상단 여백 */
+    margin-bottom: 20px !important;/* 하단 여백 */
+    display: inline-block;
+  }
+  /* 모바일에서 '캠지기 센터'는 #444444 */
+  header nav a[href="/admin"] {
+    color: #444444 !important;
+  }
+  header nav .btn:hover,
+  header nav .btn-outline:hover {
+    transform: none;
+    opacity: .85;
+  }
   
   /* 히어로 */
   .hero {
@@ -429,10 +461,12 @@ footer {
   .hero .cta {
     width: 100%;
     flex-direction: column;
+    align-items: center; /* 묶음 중앙 */
   }
-  .hero .cta a {
-    width: 100%;
-    justify-content: center;
+  .hero .cta a,
+  .hero .cta button {
+    width: 100%; /* 버튼은 가로폭 유지 */
+    max-width: 560px; /* 너무 넓어지지 않도록 안전선 */
   }
   
   /* 버튼 */
@@ -455,11 +489,11 @@ footer {
   
   /* 섹션 */
   .section {
-    padding: 40px 0 36px 0;
+    padding: 56px 0 44px 0;
   }
   .title {
     font-size: 24px;
-    margin: 32px 0 12px 0;
+    margin: 52px 0 18px 0; /* 타이틀 위쪽만 넉넉하게 */
     line-height: 1.3;
   }
   .subtitle {
@@ -470,6 +504,8 @@ footer {
   .kicker {
     font-size: 12px;
     letter-spacing: 0.05em;
+    display: inline-block;
+    margin-top: 32px; /* '캠핑장 운영 자동화' 상단 마진 */
   }
   
   /* 카드 */
@@ -494,12 +530,14 @@ footer {
   
   /* 그리드 */
   .grid {
-    gap: 14px;
+    gap: 16px;
   }
   
   .grid-3 {
     grid-template-columns: 1fr !important;
   }
+  /* 그리드 상단 간격 규칙 제거 (원복) */
+  /* 첫 카드 상단 여백 추가 규칙 제거 */
   
   /* 모바일 모달 */
   .demo-modal {

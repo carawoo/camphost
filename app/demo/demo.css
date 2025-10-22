@@ -730,6 +730,7 @@
   
   .demo-card {
     padding: 24px;
+    margin-bottom: 24px; /* 모바일에서 카드 간 하단 여백 유지 */
   }
   
   .report-grid {
