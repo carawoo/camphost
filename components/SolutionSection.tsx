@@ -9,40 +9,52 @@ export default function SolutionSection() {
              {/* 무인 체크인 프로세스 이미지 */}
              <div className="process-images">
                <div className="process-image-container">
-                 <picture>
-                   <source media="(max-width: 768px)" srcSet="/Desktop - 4.png" />
-                   <Image
-                     src="/checkin-process.png"
-                     alt="무인 체크인 프로세스"
-                     width={800}
-                     height={400}
-                     className="process-image"
-                   />
-                 </picture>
+                 <Image
+                   src="/checkin-process.png"
+                   alt="무인 체크인 프로세스"
+                   width={800}
+                   height={400}
+                   className="process-image desktop-image"
+                 />
+                 <Image
+                   src="/Desktop - 4.png"
+                   alt="무인 체크인 프로세스 (모바일)"
+                   width={800}
+                   height={400}
+                   className="process-image mobile-image"
+                 />
                </div>
                <div className="process-image-container">
-                 <picture>
-                   <source media="(max-width: 768px)" srcSet="/Desktop - 5.png" />
-                   <Image
-                     src="/registration-process.png"
-                     alt="예약 등록 프로세스"
-                     width={800}
-                     height={400}
-                     className="process-image"
-                   />
-                 </picture>
+                 <Image
+                   src="/registration-process.png"
+                   alt="예약 등록 프로세스"
+                   width={800}
+                   height={400}
+                   className="process-image desktop-image"
+                 />
+                 <Image
+                   src="/Desktop - 5.png"
+                   alt="예약 등록 프로세스 (모바일)"
+                   width={800}
+                   height={400}
+                   className="process-image mobile-image"
+                 />
                </div>
                <div className="process-image-container">
-                 <picture>
-                   <source media="(max-width: 768px)" srcSet="/Desktop - 6.png" />
-                   <Image
-                     src="/Desktop - 3.png"
-                     alt="체크인 완료 시 안내 문자 전송"
-                     width={800}
-                     height={400}
-                     className="process-image"
-                   />
-                 </picture>
+                 <Image
+                   src="/Desktop - 3.png"
+                   alt="체크인 완료 시 안내 문자 전송"
+                   width={800}
+                   height={400}
+                   className="process-image desktop-image"
+                 />
+                 <Image
+                   src="/Desktop - 6.png"
+                   alt="체크인 완료 시 안내 문자 전송 (모바일)"
+                   width={800}
+                   height={400}
+                   className="process-image mobile-image"
+                 />
                </div>
              </div>
 

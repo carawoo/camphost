@@ -815,6 +815,25 @@ footer {
   border-radius: 12px;
 }
 
+/* 데스크톱/모바일 이미지 제어 */
+.desktop-image {
+  display: block;
+}
+
+.mobile-image {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-image {
+    display: none;
+  }
+  
+  .mobile-image {
+    display: block;
+  }
+}
+
 @media (max-width: 768px) {
   .process-images {
     margin: 40px 0;
