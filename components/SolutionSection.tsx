@@ -56,6 +56,22 @@ export default function SolutionSection() {
                    className="process-image mobile-image"
                  />
                </div>
+               <div className="process-image-container">
+                 <Image
+                   src="/온담.png"
+                   alt="온담 문의함 프로세스"
+                   width={800}
+                   height={400}
+                   className="process-image desktop-image"
+                 />
+                 <Image
+                   src="/온담-1.png"
+                   alt="온담 문의함 프로세스 (모바일)"
+                   width={800}
+                   height={400}
+                   className="process-image mobile-image"
+                 />
+               </div>
              </div>
 
       {/* 무인 체크인 설명 */}
