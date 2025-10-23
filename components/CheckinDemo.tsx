@@ -3,121 +3,163 @@
 import { useState, useEffect } from 'react'
 
 export default function CheckinDemo() {
-  const [viewMode, setViewMode] = useState<'owner' | 'customer'>('owner')
   const [step, setStep] = useState(0)
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
+  const [demoName, setDemoName] = useState('')
+  const [demoPhone, setDemoPhone] = useState('')
+  const [customerName, setCustomerName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [showOverlay, setShowOverlay] = useState(true)
   const [reservations, setReservations] = useState([
     { id: 1, name: '김철수', phone: '010-1234-5678', site: 'A-15', date: '2025-01-25' },
     { id: 2, name: '이영희', phone: '010-9876-5432', site: 'B-03', date: '2025-01-25' },
   ])
 
-  const [newReservation, setNewReservation] = useState({
-    name: '',
-    phone: '',
-    site: '',
-  })
 
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [editingReservation, setEditingReservation] = useState({
-    name: '',
-    phone: '',
-    site: '',
-    date: ''
-  })
+
+
+  const overlayContent = [
+    {
+      title: "무인 체크인이 뭔가요?",
+      description: "고객이 직접 키오스크나 모바일로 체크인하는 시스템입니다.",
+      benefits: [
+        "사장님이 직접 대기할 필요 없음",
+        "야간 입실도 자동 처리",
+        "예약 정보와 자동 매칭",
+        "이용 안내 문자 자동 전송"
+      ]
+    },
+    {
+      title: "예약 리스트 관리란?",
+      description: "네이버/캠핏/땡큐캠핑 등에서 받은 예약을 시스템에 등록하는 과정입니다.",
+      benefits: [
+        "기존 예약 플랫폼 그대로 사용",
+        "예약 정보를 한 곳에서 관리",
+        "고객 체크인 시 자동 매칭",
+        "실시간 체크인 현황 확인"
+      ]
+    },
+    {
+      title: "자동 매칭이 어떻게 되나요?",
+      description: "고객이 이름과 연락처를 입력하면 등록된 예약과 자동으로 연결됩니다.",
+      benefits: [
+        "수동 확인 과정 생략",
+        "실수 없는 정확한 매칭",
+        "즉시 입실 처리",
+        "안내 문자 자동 발송"
+      ]
+    }
+  ]
 
   const handleAddReservation = () => {
-    const trimmed = {
-      name: newReservation.name.trim(),
-      phone: newReservation.phone.trim(),
-      site: newReservation.site.trim(),
-    }
-    if (!trimmed.name || !trimmed.phone || !trimmed.site) {
-      alert('고객 이름, 연락처, 사이트 번호를 모두 입력해주세요.')
+    if (!demoName.trim() || !demoPhone.trim()) {
+      alert('이름과 연락처를 입력해주세요.')
       return
     }
-    const nextId = reservations.length ? Math.max(...reservations.map(r => r.id)) + 1 : 1
-    const today = new Date()
-    const yyyy = today.getFullYear()
-    const mm = String(today.getMonth() + 1).padStart(2, '0')
-    const dd = String(today.getDate()).padStart(2, '0')
-    const dateStr = `${yyyy}-${mm}-${dd}`
-
-    setReservations(prev => [
-      ...prev,
-      { id: nextId, name: trimmed.name, phone: trimmed.phone, site: trimmed.site, date: dateStr }
-    ])
-    setNewReservation({ name: '', phone: '', site: '' })
-    alert('예약이 추가되었습니다.')
-  }
-
-  const handleDeleteReservation = (id: number) => {
-    if (!confirm('이 예약을 삭제하시겠습니까?')) return
-    setReservations(prev => prev.filter(r => r.id !== id))
-  }
-
-  const handleStartEdit = (id: number) => {
-    const target = reservations.find(r => r.id === id)
-    if (!target) return
-    setEditingId(id)
-    setEditingReservation({ name: target.name, phone: target.phone, site: target.site, date: target.date })
-  }
-
-  const handleCancelEdit = () => {
-    setEditingId(null)
-    setEditingReservation({ name: '', phone: '', site: '', date: '' })
-  }
-
-  const handleSaveEdit = () => {
-    if (editingId === null) return
-    const trimmed = {
-      name: editingReservation.name.trim(),
-      phone: editingReservation.phone.trim(),
-      site: editingReservation.site.trim(),
-      date: editingReservation.date.trim(),
+    
+    const newReservation = {
+      id: reservations.length + 1,
+      name: demoName.trim(),
+      phone: demoPhone.trim(),
+      site: 'C-12',
+      date: new Date().toISOString().split('T')[0]
     }
-    if (!trimmed.name || !trimmed.phone || !trimmed.site || !trimmed.date) {
-      alert('이름, 연락처, 사이트, 날짜를 모두 입력해주세요.')
+    
+    setReservations(prev => [...prev, newReservation])
+    setDemoName('')
+    setDemoPhone('')
+    setStep(1) // 다음 단계로 진행
+  }
+
+  const handleCustomerCheckin = () => {
+    if (!customerName.trim() || !customerPhone.trim()) {
+      alert('이름과 연락처를 입력해주세요.')
       return
     }
-    setReservations(prev => prev.map(r => r.id === editingId ? { ...r, ...trimmed } : r))
-    handleCancelEdit()
-    alert('예약이 수정되었습니다.')
-  }
-
-  // 2번 단계에서 1초 후 자동으로 3번 단계로 넘어가기
-  useEffect(() => {
-    if (step === 1) {
-      const timer = setTimeout(() => {
-        setStep(2)
-      }, 1000)
-      
-      return () => clearTimeout(timer)
+    
+    // 예약 리스트에서 매칭 확인
+    const matchedReservation = reservations.find(res => 
+      res.name === customerName.trim() && res.phone === customerPhone.trim()
+    )
+    
+    if (matchedReservation) {
+      setStep(2) // 매칭 성공, 다음 단계로
+    } else {
+      setStep(3) // 매칭 실패
     }
-  }, [step])
+  }
 
   const steps = [
     {
-      title: "고객이 이름·연락처 입력",
+      title: "1단계: 사장님이 예약 추가",
+      description: "네이버/캠핏/땡큐캠핑에서 확인한 예약을 시스템에 등록합니다.",
       content: (
-        <div className="demo-form">
+        <div className="owner-demo-content">
+          <div className="view-indicator owner">사장님 화면</div>
+          <h3>예약 리스트 관리</h3>
+          <p className="step-description">새로운 예약을 추가해보세요.</p>
+          
+          <div className="reservation-list">
+            {reservations.map(res => (
+              <div key={res.id} className="reservation-item">
+                <div className="reservation-info">
+                  <strong>{res.name}</strong>
+                  <span>{res.phone}</span>
+                  <span>사이트: {res.site}</span>
+                  <span>{res.date}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="add-reservation">
+            <h4>새 예약 추가</h4>
+            <input
+              type="text"
+              placeholder="고객 이름"
+              value={demoName}
+              onChange={(e) => setDemoName(e.target.value)}
+            />
+            <input
+              type="tel"
+              placeholder="연락처"
+              value={demoPhone}
+              onChange={(e) => setDemoPhone(e.target.value)}
+            />
+            <button 
+              className="btn"
+              onClick={handleAddReservation}
+              disabled={!demoName.trim() || !demoPhone.trim()}
+            >
+              예약 추가하기
+            </button>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "2단계: 고객이 체크인",
+      description: "캠핑장에 도착한 고객이 키오스크에서 이름과 연락처를 입력합니다.",
+      content: (
+        <div className="customer-demo-content">
+          <div className="view-indicator customer">고객 화면</div>
           <h3>체크인 정보 입력</h3>
+          <p className="step-description">캠핑장에 도착했습니다. 이름과 연락처를 입력해주세요.</p>
           <input 
             type="text" 
             placeholder="이름을 입력하세요" 
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
           />
           <input 
             type="tel" 
             placeholder="연락처를 입력하세요" 
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
           />
           <button 
             className="btn"
-            onClick={() => setStep(1)}
-            disabled={!name || !phone}
+            onClick={handleCustomerCheckin}
+            disabled={!customerName.trim() || !customerPhone.trim()}
           >
             체크인 신청
           </button>
@@ -125,178 +167,119 @@ export default function CheckinDemo() {
       )
     },
     {
-      title: "예약 리스트 자동 매칭",
-      content: (
-        <div className="demo-result">
-          <div className="checking">
-            <div className="spinner"></div>
-            <p>예약 정보 확인 중...</p>
-            <small style={{ color: 'var(--sub)', marginTop: '8px', display: 'block' }}>
-              사전 등록된 예약 리스트와 매칭합니다
-            </small>
-          </div>
-        </div>
-      )
-    },
-    {
-      title: "입실 완료",
+      title: "3단계: 예약 매칭 및 완료",
+      description: "입력된 정보가 예약 리스트와 매칭되어 입실이 완료됩니다.",
       content: (
         <div className="demo-success">
           <div className="success-icon">✓</div>
           <h3>체크인 완료!</h3>
-          <p><strong>{name}</strong>님, 안녕하세요!</p>
-          <p>사이트: A-15 | 체크인: {new Date().toLocaleString()}</p>
+          <p><strong>{customerName}</strong>님, 안녕하세요!</p>
+          <p>사이트: C-12 | 체크인: {new Date().toLocaleString()}</p>
+          <div className="success-details">
+            <p>📱 이용 안내 문자가 전송되었습니다.</p>
+            <p>🏕️ 사이트 위치와 이용 안내를 확인하세요.</p>
+          </div>
           <button 
             className="btn btn-outline"
             onClick={() => {
               setStep(0)
-              setName('')
-              setPhone('')
+              setCustomerName('')
+              setCustomerPhone('')
+              setDemoName('')
+              setDemoPhone('')
             }}
           >
-            다시 해보기
+            처음부터 다시
+          </button>
+        </div>
+      )
+    },
+    {
+      title: "예약 정보 없음",
+      description: "등록된 예약 정보가 없습니다. 사장님에게 문의하세요.",
+      content: (
+        <div className="demo-error">
+          <div className="error-icon">⚠️</div>
+          <h3>예약 정보를 찾을 수 없습니다</h3>
+          <p>입력하신 정보와 일치하는 예약이 없습니다.</p>
+          <div className="error-details">
+            <p>📞 사장님에게 직접 연락하세요</p>
+            <p>🏕️ 또는 예약 플랫폼에서 예약을 확인해주세요</p>
+          </div>
+          <button 
+            className="btn btn-outline"
+            onClick={() => {
+              setStep(1)
+              setCustomerName('')
+              setCustomerPhone('')
+            }}
+          >
+            다시 시도
           </button>
         </div>
       )
     }
   ]
 
-  // 사장님 화면 콘텐츠
-  const ownerView = (
-    <div className="owner-dashboard">
-      <h3>예약 리스트 관리</h3>
-      <div className="reservation-list">
-        {reservations.map(res => (
-          <div key={res.id} className="reservation-item">
-            {editingId === res.id ? (
-              <div className="reservation-info" style={{ width: '100%' }}>
-                <input
-                  type="text"
-                  placeholder="이름"
-                  value={editingReservation.name}
-                  onChange={(e) => setEditingReservation({ ...editingReservation, name: e.target.value })}
-                />
-                <input
-                  type="tel"
-                  placeholder="연락처"
-                  value={editingReservation.phone}
-                  onChange={(e) => setEditingReservation({ ...editingReservation, phone: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="사이트"
-                  value={editingReservation.site}
-                  onChange={(e) => setEditingReservation({ ...editingReservation, site: e.target.value })}
-                />
-                <input
-                  type="date"
-                  placeholder="날짜"
-                  value={editingReservation.date}
-                  onChange={(e) => setEditingReservation({ ...editingReservation, date: e.target.value })}
-                />
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                  <button className="btn-small" onClick={handleSaveEdit}>저장</button>
-                  <button className="btn-small" onClick={handleCancelEdit} style={{ background: 'var(--line)', color: 'var(--ink)' }}>취소</button>
-                </div>
-              </div>
-            ) : (
-              <div className="reservation-info" style={{ width: '100%', alignItems: 'center' }}>
-                <strong>{res.name}</strong>
-                <span>{res.phone}</span>
-                <span>사이트: {res.site}</span>
-                <span>{res.date}</span>
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                  <button className="btn-small" onClick={() => handleStartEdit(res.id)}>수정</button>
-                  <button className="btn-small" onClick={() => handleDeleteReservation(res.id)} style={{ background: '#D32F2F' }}>삭제</button>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-      <div className="add-reservation">
-        <h4>새 예약 추가</h4>
-        <p className="helper-text">네이버/캠핏/땡큐캠핑에서 확인한 예약 정보를 입력하세요</p>
-        <input
-          type="text"
-          placeholder="고객 이름"
-          value={newReservation.name}
-          onChange={(e) => setNewReservation({ ...newReservation, name: e.target.value })}
-        />
-        <input
-          type="tel"
-          placeholder="연락처"
-          value={newReservation.phone}
-          onChange={(e) => setNewReservation({ ...newReservation, phone: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="사이트 번호"
-          value={newReservation.site}
-          onChange={(e) => setNewReservation({ ...newReservation, site: e.target.value })}
-        />
-        <button className="btn" onClick={handleAddReservation}>예약 추가</button>
-      </div>
-    </div>
-  )
 
   return (
     <section className="demo-section">
-      <div className="wrap">
-        <h2>무인 체크인</h2>
-        
-        {/* 탭 네비게이션 */}
-        <div className="demo-tabs">
-          <button 
-            className={`tab ${viewMode === 'owner' ? 'active' : ''}`}
-            onClick={() => setViewMode('owner')}
-          >
-            사장님 화면
-          </button>
-          <button 
-            className={`tab ${viewMode === 'customer' ? 'active' : ''}`}
-            onClick={() => setViewMode('customer')}
-          >
-            고객 화면
-          </button>
-        </div>
+        <div className="wrap">
+          <h2>무인 체크인</h2>
+          
+          <div className="demo-card">
+            <div className="demo-progress">
+              {steps.slice(0, 3).map((_, index) => (
+                <div 
+                  key={index} 
+                  className={`step ${index <= step && step < 3 ? 'active' : ''}`}
+                >
+                  {index + 1}
+                </div>
+              ))}
+            </div>
+            <div className="demo-content">
+              <h3>{steps[step].title}</h3>
+              <p className="step-explanation">{steps[step].description}</p>
+              {steps[step].content}
+            </div>
+          </div>
 
-        <div className="demo-card">
-          {viewMode === 'owner' ? (
-            ownerView
-          ) : (
-            <>
-              <div className="demo-progress">
-                {steps.map((_, index) => (
-                  <div 
-                    key={index} 
-                    className={`step ${index <= step ? 'active' : ''}`}
-                  >
-                    {index + 1}
-                  </div>
-                ))}
+        {/* 오버레이 설명 */}
+        {showOverlay && (
+          <div className="overlay-backdrop" onClick={() => setShowOverlay(false)}>
+            <div className="overlay-content" onClick={(e) => e.stopPropagation()}>
+              <div className="overlay-header">
+                <h3>{overlayContent[step].title}</h3>
+                <button 
+                  className="overlay-close"
+                  onClick={() => setShowOverlay(false)}
+                >
+                  ×
+                </button>
               </div>
-              <div className="demo-content">
-                <h3>{steps[step].title}</h3>
-                {steps[step].content}
+              <div className="overlay-body">
+                <p className="overlay-description">{overlayContent[step].description}</p>
+                <div className="overlay-benefits">
+                  <h4>이런 점이 좋아요:</h4>
+                  <ul>
+                    {overlayContent[step].benefits.map((benefit, index) => (
+                      <li key={index}>
+                        <span className="benefit-icon">✓</span>
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </>
-          )}
-        </div>
-        
-        {viewMode === 'owner' && (
-          <div className="demo-features">
-            <div className="feature">
-              <span className="tick">✓</span>
-              <span>사장님이 예약 플랫폼에서 확인한 예약을 시스템에 등록</span>
-            </div>
-            <div className="feature">
-              <span className="tick">✓</span>
-              <span>야간 입실/늦은 퇴실도 무리 없이 처리</span>
-            </div>
-            <div className="feature">
-              <span className="tick">✓</span>
-              <span>종이·전화·대기 제거</span>
+              <div className="overlay-footer">
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => setShowOverlay(false)}
+                >
+                  알겠습니다
+                </button>
+              </div>
             </div>
           </div>
         )}
