@@ -17,7 +17,7 @@ export default function Hero() {
       </p>
       <div className="cta">
         <Link href="#apply" className="btn">
-          베타 신청하기
+          얼리버드 신청하기
         </Link>
       </div>
       <div className="pill">

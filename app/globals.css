@@ -790,6 +790,27 @@ footer {
   }
 }
 
+/* 섹션 헤더 스타일 */
+.section-header {
+  text-align: center;
+  margin: 60px 0 40px 0;
+  padding: 0 20px;
+}
+
+.section-header h3 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 12px 0;
+}
+
+.section-header p {
+  font-size: 16px;
+  color: var(--sub);
+  margin: 0;
+  line-height: 1.5;
+}
+
 /* 프로세스 이미지 스타일 */
 .process-images {
   display: flex;

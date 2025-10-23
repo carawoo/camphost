@@ -15,7 +15,7 @@ export default function ApplySection() {
       >
         <div>
           <h2 className="title" style={{ margin: 0 }}>
-            베타 캠핑장 10곳 모집
+            얼리버드 캠핑장 10곳 모집
           </h2>
           <p className="muted" style={{ margin: '6px 0 0' }}>
             상주 없이 운영해보고, 월 리포트까지 받아보세요.
@@ -28,7 +28,7 @@ export default function ApplySection() {
             target="_blank"
             rel="noopener"
           >
-            무료 도입 신청
+            얼리버드 신청하기
           </a>
         </div>
       </div>
