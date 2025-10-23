@@ -56,22 +56,6 @@ export default function SolutionSection() {
                    className="process-image mobile-image"
                  />
                </div>
-               <div className="process-image-container">
-                 <Image
-                   src="/온담.png"
-                   alt="온담 문의함 프로세스"
-                   width={800}
-                   height={400}
-                   className="process-image desktop-image"
-                 />
-                 <Image
-                   src="/온담-1.png"
-                   alt="온담 문의함 프로세스 (모바일)"
-                   width={800}
-                   height={400}
-                   className="process-image mobile-image"
-                 />
-               </div>
              </div>
 
       {/* 무인 체크인 설명 */}
@@ -94,44 +78,102 @@ export default function SolutionSection() {
         </div>
       </div>
 
-      <div className="grid grid-2">
-
-        <div className="card">
-          <h3>온담 (문의함)</h3>
-          <ul className="list">
-            <li>
-              <span className="tick">✓</span>
-              <span>사장님 부재 중에도 고객이 메시지 남김</span>
-            </li>
-            <li>
-              <span className="tick">✓</span>
-              <span>자주 묻는 질문 자동응답 / 문자 알림</span>
-            </li>
-            <li>
-              <span className="tick">✓</span>
-              <span>안내페이지(지도·매너타임·분리수거) 자동 제공</span>
-            </li>
-          </ul>
+      {/* 온담 문의함 프로세스 이미지 */}
+      <div className="process-images">
+        <div className="process-image-container">
+          <Image
+            src="/온담.png"
+            alt="온담 문의함 프로세스"
+            width={800}
+            height={400}
+            className="process-image desktop-image"
+          />
+          <Image
+            src="/온담-1.png"
+            alt="온담 문의함 프로세스 (모바일)"
+            width={800}
+            height={400}
+            className="process-image mobile-image"
+          />
         </div>
-
-        <div className="card">
-          <h3>위브 (리포트)</h3>
-          <ul className="list">
-            <li>
-              <span className="tick">✓</span>
-              <span>예약/체크인/문의 데이터를 엮어 월간 리포트 제공</span>
-            </li>
-            <li>
-              <span className="tick">✓</span>
-              <span>"이번 달 손님이 왜 줄었는가"를 데이터로 설명</span>
-            </li>
-            <li>
-              <span className="tick">✓</span>
-              <span>날씨·요일·타깃별 패턴 분석</span>
-            </li>
-          </ul>
+        <div className="process-image-container">
+          <Image
+            src="/온담2.png"
+            alt="온담 문의함 프로세스 2"
+            width={800}
+            height={400}
+            className="process-image desktop-image"
+          />
+          <Image
+            src="/온담2-1.png"
+            alt="온담 문의함 프로세스 2 (모바일)"
+            width={800}
+            height={400}
+            className="process-image mobile-image"
+          />
         </div>
       </div>
+
+      {/* 온담 설명 */}
+      <div className="ondam-description">
+        <div className="description-item">
+          <span className="step-number">1</span>
+          <span className="description-text">사장님이 자주 묻는 질문에 대한 자동응답을 미리 설정</span>
+        </div>
+        <div className="description-item">
+          <span className="step-number">2</span>
+          <span className="description-text">고객이 문의 입력 → AI 자동 응답 → 사장님에게 알림</span>
+        </div>
+        <div className="description-item">
+          <span className="step-number">3</span>
+          <span className="description-text">24시간 자동 응답으로 고객 만족도 향상</span>
+        </div>
+        <div className="description-item">
+          <span className="step-number">4</span>
+          <span className="description-text">문의 내역 자동 기록 및 관리</span>
+        </div>
+      </div>
+
+      {/* 위브 리포트 프로세스 이미지 */}
+      <div className="process-images">
+        <div className="process-image-container">
+          <Image
+            src="/위브.png"
+            alt="위브 리포트 프로세스"
+            width={800}
+            height={400}
+            className="process-image desktop-image"
+          />
+          <Image
+            src="/위브-1.png"
+            alt="위브 리포트 프로세스 (모바일)"
+            width={800}
+            height={400}
+            className="process-image mobile-image"
+          />
+        </div>
+      </div>
+
+      {/* 위브 설명 */}
+      <div className="weave-description">
+        <div className="description-item">
+          <span className="step-number">1</span>
+          <span className="description-text">체크인/문의/예약 데이터를 실시간으로 수집</span>
+        </div>
+        <div className="description-item">
+          <span className="step-number">2</span>
+          <span className="description-text">AI가 운영 패턴과 트렌드를 분석</span>
+        </div>
+        <div className="description-item">
+          <span className="step-number">3</span>
+          <span className="description-text">월간 리포트 자동 생성 및 제안사항 제공</span>
+        </div>
+        <div className="description-item">
+          <span className="step-number">4</span>
+          <span className="description-text">데이터 기반 운영 개선 방향 제시</span>
+        </div>
+      </div>
+
     </section>
   )
 }
