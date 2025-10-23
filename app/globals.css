@@ -984,6 +984,282 @@ footer {
   font-size: 15px;
 }
 
+/* 기대효과 시각화 스타일 */
+.impact-visualization {
+  margin: 40px 0 60px 0;
+  padding: 40px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.impact-chart {
+  display: flex;
+  justify-content: space-around;
+  align-items: end;
+  gap: 40px;
+  height: 200px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.chart-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.chart-bar {
+  width: 60px;
+  height: 150px;
+  background: var(--soft);
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  display: flex;
+  align-items: end;
+}
+
+.bar-fill {
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent), #E8A87A);
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  transition: all 0.3s ease;
+  animation: fillBar 1.5s ease-out;
+}
+
+.bar-label {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chart-label {
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: center;
+}
+
+@keyframes fillBar {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--target-height);
+  }
+}
+
+/* 기대효과 카드 스타일 */
+.impact-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.impact-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.impact-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.impact-highlight {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--soft);
+  border-radius: 12px;
+  text-align: center;
+  border: 2px solid var(--accent);
+}
+
+.highlight-number {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.highlight-text {
+  font-size: 14px;
+  color: var(--sub);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .impact-visualization {
+    margin: 30px 0 40px 0;
+    padding: 20px;
+  }
+  
+  .impact-chart {
+    gap: 20px;
+    height: 150px;
+  }
+  
+  .chart-bar {
+    width: 40px;
+    height: 100px;
+  }
+  
+  .bar-label {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  
+  .chart-label {
+    font-size: 12px;
+  }
+}
+
+/* 문제점 시각화 스타일 */
+.pain-visualization {
+  margin: 40px 0 60px 0;
+  padding: 40px;
+  background: linear-gradient(135deg, #FFF5F5, #FFE8E8);
+  border-radius: 16px;
+  border: 2px solid #FFE0E0;
+}
+
+.pain-stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 40px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.stat-item {
+  text-align: center;
+  flex: 1;
+}
+
+.stat-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  display: block;
+  animation: pulse 2s infinite;
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #E53E3E;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--sub);
+  font-weight: 500;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* 문제점 카드 스타일 */
+.pain-card {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #FFE0E0;
+  background: linear-gradient(135deg, #FFF, #FFF8F8);
+  transition: all 0.3s ease;
+}
+
+.pain-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(229, 62, 62, 0.15);
+  border-color: #E53E3E;
+}
+
+.pain-icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  display: block;
+  text-align: center;
+}
+
+.pain-highlight {
+  margin-top: 20px;
+  padding: 16px;
+  background: #FFF5F5;
+  border-radius: 12px;
+  border: 1px solid #FFE0E0;
+}
+
+.pain-problem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.problem-icon {
+  font-size: 20px;
+}
+
+.problem-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #E53E3E;
+}
+
+.pain-impact {
+  text-align: right;
+}
+
+.impact-text {
+  font-size: 12px;
+  color: var(--sub);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .pain-visualization {
+    margin: 30px 0 40px 0;
+    padding: 20px;
+  }
+  
+  .pain-stats {
+    gap: 20px;
+    flex-direction: column;
+  }
+  
+  .stat-icon {
+    font-size: 36px;
+  }
+  
+  .stat-number {
+    font-size: 24px;
+  }
+  
+  .pain-icon {
+    font-size: 32px;
+  }
+}
+
 .description-item {
   display: flex;
   align-items: center;
