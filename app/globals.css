@@ -822,7 +822,28 @@ footer {
   }
   
   .process-image-container {
-    padding: 15px;
+    padding: 10px;
+    max-width: 100%;
+    width: 100%;
+  }
+  
+  .process-image {
+    width: 100%;
+    height: auto;
+    min-height: 200px;
+    object-fit: cover;
+  }
+}
+
+@media (max-width: 480px) {
+  .process-image-container {
+    padding: 5px;
+    margin: 0 -10px;
+    width: calc(100% + 20px);
+  }
+  
+  .process-image {
+    min-height: 250px;
   }
 }
 
