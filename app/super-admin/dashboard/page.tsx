@@ -44,6 +44,9 @@ export default function SuperAdminDashboard() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [createdCampground, setCreatedCampground] = useState<Campground | null>(null)
   const [visibleCampgrounds, setVisibleCampgrounds] = useState<Campground[]>([])
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordCampground, setPasswordCampground] = useState<{ id: string; name: string; currentPassword: string } | null>(null)
+  const [newPassword, setNewPassword] = useState('')
 
   // 인증 확인
   useEffect(() => {
@@ -169,6 +172,69 @@ export default function SuperAdminDashboard() {
     }
   }
 
+  const openPasswordModal = async (campground: Campground) => {
+    let currentPassword = '0000'
+    if (supabaseRest.isEnabled()) {
+      try {
+        // 이름으로 조회 (UUID가 아닐 수도 있으므로)
+        const rows = await supabaseRest.select<any[]>('campgrounds', `?name=eq.${encodeURIComponent(campground.name)}&select=id,admin_password`)
+        const camp = rows && rows[0]
+        if (camp) {
+          if (camp.admin_password) {
+            currentPassword = camp.admin_password
+          }
+          // 실제 Supabase UUID 사용
+          setPasswordCampground({ id: camp.id, name: campground.name, currentPassword })
+        } else {
+          setPasswordCampground({ id: campground.id, name: campground.name, currentPassword })
+        }
+      } catch {
+        setPasswordCampground({ id: campground.id, name: campground.name, currentPassword })
+      }
+    } else {
+      setPasswordCampground({ id: campground.id, name: campground.name, currentPassword })
+    }
+    setNewPassword('')
+    setShowPasswordModal(true)
+  }
+
+  const handleUpdatePassword = async () => {
+    if (!passwordCampground || !newPassword.trim()) {
+      alert('비밀번호를 입력해주세요.')
+      return
+    }
+
+    if (!supabaseRest.isEnabled()) {
+      alert('Supabase가 설정되지 않았습니다. 환경 변수를 확인해주세요.')
+      return
+    }
+
+    try {
+      // Supabase에서 실제 UUID를 이름으로 조회
+      let targetId = passwordCampground.id
+      const nameQuery = `?name=eq.${encodeURIComponent(passwordCampground.name)}&select=id`
+      const rows = await supabaseRest.select<any[]>( 'campgrounds', nameQuery)
+      const camp = rows && rows[0]
+      if (camp?.id) {
+        targetId = camp.id
+      }
+      
+      await supabaseRest.update('campgrounds', { admin_password: newPassword.trim() }, `?id=eq.${targetId}`)
+      alert('비밀번호가 성공적으로 변경되었습니다.')
+      setShowPasswordModal(false)
+      setPasswordCampground(null)
+      setNewPassword('')
+    } catch (error: any) {
+      console.error('비밀번호 변경 오류:', error)
+      const errorMsg = error?.message || '알 수 없는 오류'
+      if (errorMsg.includes('admin_password') || errorMsg.includes('column')) {
+        alert(`오류: Supabase 테이블에 'admin_password' 컬럼이 없습니다.\n\nSQL Editor에서 다음을 실행해주세요:\n\nALTER TABLE public.campgrounds ADD COLUMN IF NOT EXISTS admin_password TEXT DEFAULT '0000';`)
+      } else {
+        alert(`비밀번호 변경 중 오류가 발생했습니다.\n\n오류: ${errorMsg}`)
+      }
+    }
+  }
+
   const handleAddCampground = async () => {
     if (!validateForm()) return
 
@@ -211,7 +277,8 @@ export default function SuperAdminDashboard() {
           address: newCampgroundData.address,
           description: newCampgroundData.description,
           status: newCampgroundData.status,
-          subscription_plan: newCampgroundData.subscriptionPlan
+          subscription_plan: newCampgroundData.subscriptionPlan,
+          admin_password: '0000' // 기본 비밀번호
         }
         const rows = await supabaseRest.upsert<any[]>('campgrounds', payload)
         createdFromDb = rows && rows[0]
@@ -492,6 +559,13 @@ export default function SuperAdminDashboard() {
                     <Button 
                       variant="secondary"
                       size="sm"
+                      onClick={() => openPasswordModal(campground)}
+                    >
+                      🔐 비밀번호 설정
+                    </Button>
+                    <Button 
+                      variant="secondary"
+                      size="sm"
                       onClick={() => window.open(campground.kioskUrl, '_blank')}
                     >
                       🖥️ 키오스크 화면
@@ -631,6 +705,42 @@ export default function SuperAdminDashboard() {
               🚀 어드민 열기
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* 비밀번호 설정 모달 */}
+      <Modal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        title={`${passwordCampground?.name} 어드민 비밀번호 설정`}
+      >
+        <div className="modal-body">
+          <div style={{ marginBottom: '16px' }}>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
+              현재 비밀번호: <strong>{passwordCampground?.currentPassword || '0000'}</strong>
+            </p>
+          </div>
+          <Input
+            label="새 비밀번호"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="새 비밀번호를 입력하세요"
+          />
+        </div>
+        <div className="modal-footer">
+          <Button 
+            variant="secondary"
+            onClick={() => setShowPasswordModal(false)}
+          >
+            취소
+          </Button>
+          <Button 
+            variant="primary"
+            onClick={handleUpdatePassword}
+          >
+            저장
+          </Button>
         </div>
       </Modal>
     </div>

@@ -70,6 +70,7 @@ export type SupabaseCampground = {
   address: string | null
   description: string | null
   guidelines?: string | null
+  admin_password?: string | null
   status: 'active' | 'pending' | 'suspended' | 'terminated'
   subscription_plan: 'basic' | 'premium' | 'enterprise'
   admin_url: string

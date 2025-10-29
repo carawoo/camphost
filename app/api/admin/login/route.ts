@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabaseRest } from '@/services/supabaseRest'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +12,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 임시 로그인 로직 (실제로는 데이터베이스와 연동)
+    // Supabase에서 캠핑장 조회 및 비밀번호 확인
+    if (supabaseRest.isEnabled()) {
+      try {
+        const rows = await supabaseRest.select<any[]>(
+          'campgrounds',
+          `?name=eq.${encodeURIComponent(campgroundName)}&select=id,name,admin_password`
+        )
+        const camp = rows && rows[0]
+        if (camp) {
+          const storedPassword = camp.admin_password || '0000' // 기본값
+          if (storedPassword === password) {
+            return NextResponse.json({
+              success: true,
+              message: '로그인 성공',
+              campgroundName: campgroundName,
+              token: 'temp_token_' + Date.now()
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Supabase 로그인 조회 오류:', error)
+      }
+    }
+
+    // 폴백: 기존 하드코딩된 목록
     const validCredentials: Record<string, string> = {
       '테스트캠핑장': 'test123',
       '오도이촌캠핑장': 'odoichon2025',
@@ -26,12 +51,12 @@ export async function POST(request: NextRequest) {
         campgroundName: campgroundName,
         token: 'temp_token_' + Date.now()
       })
-    } else {
-      return NextResponse.json(
-        { error: '캠핑장 이름 또는 비밀번호가 올바르지 않습니다.' },
-        { status: 401 }
-      )
     }
+
+    return NextResponse.json(
+      { error: '캠핑장 이름 또는 비밀번호가 올바르지 않습니다.' },
+      { status: 401 }
+    )
   } catch (error) {
     console.error('로그인 오류:', error)
     return NextResponse.json(
