@@ -241,12 +241,14 @@ export default function AdminDashboard() {
                   <div className="feature-status">준비 중</div>
                 </div>
 
-                <div className="feature-card disabled">
-                  <div className="feature-icon">⚙️</div>
-                  <h3>설정</h3>
-                  <p>캠핑장 정보, 운영 시간 등을 설정하세요</p>
-                  <div className="feature-status">준비 중</div>
-                </div>
+            <div className="feature-card active">
+              <div className="feature-icon">⚙️</div>
+              <h3>설정</h3>
+              <p>캠핑장 정보, 운영 시간 등을 설정하세요</p>
+              <Link href={`/admin/settings?campground=${encodeURIComponent(campgroundName)}`} className="feature-link">
+                <div className="feature-status">이동하기</div>
+              </Link>
+            </div>
               </>
             )}
           </div>
@@ -270,12 +272,12 @@ export default function AdminDashboard() {
               <Link href="/admin/reservations" className="action-btn primary">
                 🚪 체크인 처리
               </Link>
-              <button className="action-btn secondary">
+              <Link href={`/admin/stats?campground=${encodeURIComponent(campgroundName)}`} className="action-btn secondary">
                 📊 오늘의 통계 보기
-              </button>
-              <button className="action-btn secondary">
+              </Link>
+              <Link href={`/admin/inquiries?campground=${encodeURIComponent(campgroundName)}`} className="action-btn secondary">
                 💬 새 문의 확인
-              </button>
+              </Link>
             </div>
           </div>
 

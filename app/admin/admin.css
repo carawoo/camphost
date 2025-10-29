@@ -1476,3 +1476,21 @@
     flex-direction: column;
   }
 }
+
+/* Settings page form inputs (unified) */
+.text-area,
+.text-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+  background: #fff;
+}
+.text-area:focus,
+.text-input:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 2px rgba(49,130,206,.2);
+}

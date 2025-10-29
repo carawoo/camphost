@@ -21,6 +21,8 @@ export default function CheckInKiosk() {
   const [foundReservation, setFoundReservation] = useState<Reservation | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
   const [campgroundInfo, setCampgroundInfo] = useState<CampgroundInfo | null>(null)
+  const [campgroundId, setCampgroundId] = useState<string | null>(null)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   // 캠핑장 정보 로드 (Supabase 우선, 폴백은 로컬)
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function CheckInKiosk() {
               address: row.address || '',
               description: row.description || ''
             })
+            setCampgroundId(row.id)
             return
           }
           // fallback below
@@ -57,8 +60,11 @@ export default function CheckInKiosk() {
               address: target.address || '',
               description: target.description || ''
             })
+            setCampgroundId(target.id)
           } else {
-            setCampgroundInfo(getCampgroundInfo())
+            const info = getCampgroundInfo()
+            setCampgroundInfo(info)
+            if (info?.id) setCampgroundId(info.id)
           }
         })()
         return
@@ -75,12 +81,14 @@ export default function CheckInKiosk() {
             description: target.description || ''
           }
           setCampgroundInfo(mapped)
+          setCampgroundId(target.id)
           return
         }
       }
     } catch {}
     const info = getCampgroundInfo()
     setCampgroundInfo(info)
+    if (info?.id) setCampgroundId(info.id)
   }, [])
 
   // URL 파라미터에서 정보 가져오기
@@ -136,16 +144,28 @@ export default function CheckInKiosk() {
     let reservation: Reservation | null = null
     try {
       const urlParams = new URLSearchParams(window.location.search)
-      const id = urlParams.get('id') || undefined
-      const name = urlParams.get('campground') || undefined
-      if ((id || name) && supabaseRest.isEnabled()) {
-        // 캠핑장 ID 조회
-        const camps = await supabaseRest.select<any[]>('campgrounds', id ? `?id=eq.${encodeURIComponent(id)}&select=id` : `?name=eq.${encodeURIComponent(name!)}&select=id`)
-        const camp = camps && camps[0]
-        if (camp?.id) {
+      const idParam = urlParams.get('id') || undefined
+      const nameParam = urlParams.get('campground') || undefined
+      if ((idParam || nameParam || campgroundId || campgroundInfo?.name) && supabaseRest.isEnabled()) {
+        let campId = idParam || campgroundId
+        if (!campId) {
+          const nameToUse = nameParam || campgroundInfo?.name
+          if (nameToUse) {
+            const camps = await supabaseRest.select<any[]>('campgrounds', `?name=eq.${encodeURIComponent(nameToUse)}&select=id`)
+            campId = camps && camps[0]?.id
+            if (campId) setCampgroundId(campId)
+          }
+        }
+        if (campId) {
+          // 전화번호 유연 매칭: 숫자만/하이픈형 모두 시도
+          const phoneDigits = phone.replace(/\D/g, '')
+          const phoneHyphen = phoneDigits.length === 11 ? `${phoneDigits.slice(0,3)}-${phoneDigits.slice(3,7)}-${phoneDigits.slice(7)}` : phone
+          const orParam = encodeURIComponent(`phone.eq.${phoneDigits},phone.eq.${phoneHyphen}`)
+          // 이름은 부분/대소문자 무시 매칭
+          const encodedName = encodeURIComponent(`*${guestName}*`)
           const rows = await supabaseRest.select<any[]>(
             'reservations',
-            `?campground_id=eq.${camp.id}&guest_name=eq.${encodeURIComponent(guestName)}&phone=eq.${encodeURIComponent(phone)}&select=*`
+            `?campground_id=eq.${campId}&guest_name=ilike.${encodedName}&or=(${orParam})&select=*`
           )
           const r = rows && rows[0]
           if (r) {
@@ -226,6 +246,7 @@ export default function CheckInKiosk() {
         updateReservationStatus(foundReservation.id, 'checked-in')
       }
       setStep('success')
+      setShowSuccessModal(true)
     } catch (error) {
       setErrorMessage('체크인 처리 중 오류가 발생했습니다. 관리자에게 문의해주세요.')
       setStep('error')
@@ -364,6 +385,8 @@ export default function CheckInKiosk() {
                   체크인이 성공적으로 완료되었습니다.<br />
                   즐거운 캠핑 되세요!
                 </p>
+                {/* 캠핑장 안내/사장님 메시지 */}
+                <button onClick={() => setShowSuccessModal(true)} className="result-btn primary" style={{ marginBottom: 12 }}>체크인 정보 보기</button>
                 <div className="result-actions">
                   <button onClick={resetForm} className="result-btn secondary">
                     새 체크인
@@ -398,6 +421,54 @@ export default function CheckInKiosk() {
             </div>
           )}
         </div>
+
+        {/* 체크인 완료 팝업 */}
+        {step === 'success' && showSuccessModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={() => setShowSuccessModal(false)}>
+            <div style={{ background: '#fffdf8', borderRadius: 12, width: 'min(92vw, 560px)', padding: 24, border: '1px solid #e7e1d7' }} onClick={(e) => e.stopPropagation()}>
+              <h4 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#2E3D31' }}>체크인 정보</h4>
+              <div className="confirm-info" style={{ marginTop: 16 }}>
+                <div className="info-item">
+                  <span className="label">캠핑장</span>
+                  <span className="value">{campgroundInfo?.name || '캠핑장'}</span>
+                </div>
+                {campgroundInfo?.description && (
+                  <div className="info-item" style={{ display: 'block', borderBottom: 'none' }}>
+                    <div className="label" style={{ marginBottom: 6 }}>사장님 안내말씀</div>
+                    <div className="value" style={{ whiteSpace: 'pre-wrap' }}>{campgroundInfo.description}</div>
+                  </div>
+                )}
+                <div className="info-item">
+                  <span className="label">체크인/아웃</span>
+                  <span className="value">{foundReservation ? `${formatDate(foundReservation.checkInDate)} ~ ${formatDate(foundReservation.checkOutDate)}` : '-'}</span>
+                </div>
+                {campgroundInfo?.address && (
+                  <div className="info-item">
+                    <span className="label">주소</span>
+                    <span className="value">{campgroundInfo.address}</span>
+                  </div>
+                )}
+                <div className="info-item">
+                  <span className="label">문의</span>
+                  <span className="value">{campgroundInfo?.contactPhone || '-'} / {campgroundInfo?.contactEmail || '-'}</span>
+                </div>
+              </div>
+              <div className="result-message" style={{ textAlign: 'left' }}>
+                <strong>이용 안내</strong>
+                <ul style={{ marginTop: 8, paddingLeft: 18, lineHeight: 1.7 }}>
+                  <li>야간 소음 자제 부탁드립니다. 22시 이후 정숙.</li>
+                  <li>불꽃놀이는 지정된 공간에서만 가능합니다.</li>
+                  <li>분리수거는 출구 쪽 수거함을 이용해주세요.</li>
+                  <li>위급상황은 상단의 연락처로 바로 연락주세요.</li>
+                </ul>
+              </div>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
+                <button className="result-btn secondary" onClick={() => setShowSuccessModal(false)}>닫기</button>
+                <button className="result-btn primary" onClick={() => { setShowSuccessModal(false); resetForm() }}>새 체크인</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="kiosk-footer">
           <p>문제가 있으시면 관리자에게 문의해주세요</p>
