@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     const validCredentials: Record<string, string> = {
       '테스트캠핑장': 'test123',
       '오도이촌캠핑장': 'odoichon2025',
+      '오도이촌': '0000',
       'demo': 'demo123'
     }
 

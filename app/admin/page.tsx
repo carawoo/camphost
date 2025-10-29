@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import './admin.css'
 
@@ -24,6 +24,51 @@ export default function AdminPage() {
     email: ''
   })
 
+  // 자동 로그인 기능
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const autoLogin = urlParams.get('autoLogin')
+    const campground = urlParams.get('campground')
+    
+    if (autoLogin === 'true' && campground) {
+      // 슈퍼 어드민에서 자동 로그인 요청
+      setLoginForm({
+        campgroundName: decodeURIComponent(campground),
+        password: '0000' // 기본 비밀번호
+      })
+      
+      // 자동으로 로그인 시도
+      setTimeout(() => {
+        handleAutoLogin(decodeURIComponent(campground), '0000')
+      }, 1000)
+    }
+  }, [])
+
+  const handleAutoLogin = async (campgroundName: string, password: string) => {
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          campgroundName,
+          password
+        })
+      })
+
+      if (response.ok) {
+        alert('자동 로그인 성공! 관리자 페이지로 이동합니다.')
+        window.location.href = `/admin/dashboard?campground=${encodeURIComponent(campgroundName)}`
+      } else {
+        alert('자동 로그인에 실패했습니다. 수동으로 로그인해주세요.')
+      }
+    } catch (error) {
+      console.error('자동 로그인 오류:', error)
+      alert('자동 로그인에 실패했습니다. 수동으로 로그인해주세요.')
+    }
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -45,8 +90,8 @@ export default function AdminPage() {
       if (response.ok) {
         const data = await response.json()
         alert('로그인 성공! 관리자 페이지로 이동합니다.')
-        // 실제로는 관리자 대시보드로 리다이렉트
-        console.log('로그인 성공:', data)
+        // 대시보드로 리다이렉트
+        window.location.href = `/admin/dashboard?campground=${encodeURIComponent(loginForm.campgroundName)}`
       } else {
         const errorData = await response.json()
         alert(errorData.error || '로그인에 실패했습니다.')

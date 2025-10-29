@@ -1,0 +1,400 @@
+/* 키오스크 페이지 스타일 - 오도이촌 메인 디자인 시스템 적용 */
+:root {
+  --bg: #F5F0E6;          /* 크림 베이지 */
+  --paper: #FFFDF8;       /* 종이색 */
+  --ink: #2E3D31;         /* 딥그린(본문) */
+  --sub: #6A7B6F;         /* 서브 텍스트 */
+  --accent: #C78057;      /* 테라코타 포인트 */
+  --line: #E7E1D7;        /* 구분선 */
+  --soft: #F0E9DE;        /* 소프트 베이지 */
+  --success: #2F7D32;     /* 긍정 */
+}
+
+.kiosk-page {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Pretendard", "Apple SD Gothic Neo", Roboto, Segoe UI, Helvetica, Arial, sans-serif;
+  letter-spacing: -0.2px;
+}
+
+.kiosk-container {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 50px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  width: 500px;
+  max-width: 100%;
+  text-align: center;
+}
+
+.kiosk-header {
+  margin-bottom: 40px;
+}
+
+.kiosk-logo-icon {
+  font-size: 60px;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.kiosk-header h1 {
+  margin: 0 0 10px 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.kiosk-header p {
+  margin: 0;
+  color: var(--sub);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.kiosk-form, .form-container {
+  margin-bottom: 30px;
+}
+
+.kiosk-form .form-group, .form-container .form-group {
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.kiosk-form .form-group label, .form-container .form-group label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.kiosk-form .form-group input, .form-container .form-group input, .form-container input[type="text"], .form-container input[type="tel"] {
+  width: 100%;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 18px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.kiosk-form .form-group input:focus, .form-container .form-group input:focus, .form-container input[type="text"]:focus, .form-container input[type="tel"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(199, 128, 87, 0.2);
+}
+
+.kiosk-form .form-group input::placeholder, .form-container .form-group input::placeholder, .form-container input::placeholder {
+  color: var(--sub);
+}
+
+.checkin-btn {
+  width: 100%;
+  background: var(--ink);
+  color: white;
+  border: 1px solid var(--ink);
+  padding: 18px;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checkin-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.checkin-btn:active {
+  transform: translateY(0);
+}
+
+.message {
+  margin-top: 25px;
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.message.success {
+  background: rgba(47, 125, 50, 0.1);
+  color: var(--success);
+  border: 1px solid rgba(47, 125, 50, 0.3);
+}
+
+.message.error {
+  background: rgba(244, 67, 54, 0.1);
+  color: #e53e3e;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.kiosk-footer {
+  margin-top: 40px;
+  color: var(--sub);
+  font-size: 14px;
+}
+
+/* 단계별 진행 표시 */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.step {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  background: var(--soft);
+  color: var(--sub);
+  border: 2px solid var(--line);
+}
+
+.step.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.step-line {
+  width: 60px;
+  height: 2px;
+  background: var(--line);
+  margin: 0 10px;
+}
+
+.step-line.active {
+  background: var(--accent);
+}
+
+/* 확인 단계 스타일 */
+.confirm-step {
+  text-align: left;
+}
+
+.confirm-info {
+  background: var(--soft);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item .label {
+  font-size: 14px;
+  color: var(--sub);
+  font-weight: 500;
+}
+
+.info-item .value {
+  font-size: 16px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.confirm-btn {
+  flex: 1;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.confirm-btn.primary {
+  background: var(--ink);
+  color: white;
+  border-color: var(--ink);
+}
+
+.confirm-btn.primary:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.confirm-btn.secondary {
+  background: transparent;
+  color: var(--sub);
+  border-color: var(--line);
+}
+
+.confirm-btn.secondary:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+
+/* 성공/오류 단계 스타일 */
+.result-step {
+  text-align: center;
+}
+
+.result-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.result-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.result-message {
+  font-size: 16px;
+  color: var(--sub);
+  line-height: 1.5;
+  margin-bottom: 30px;
+}
+
+.result-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.result-btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.result-btn.primary {
+  background: var(--ink);
+  color: white;
+  border-color: var(--ink);
+}
+
+.result-btn.primary:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.result-btn.secondary {
+  background: transparent;
+  color: var(--sub);
+  border-color: var(--line);
+}
+
+.result-btn.secondary:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .kiosk-container {
+    padding: 40px 30px;
+  }
+
+  .kiosk-header h1 {
+    font-size: 28px;
+  }
+
+  .kiosk-header p {
+    font-size: 16px;
+  }
+
+  .kiosk-form .form-group input, .form-container .form-group input, .form-container input[type="text"], .form-container input[type="tel"] {
+    padding: 14px 18px;
+    font-size: 16px;
+  }
+
+  .checkin-btn {
+    padding: 16px;
+    font-size: 18px;
+  }
+
+  .confirm-actions {
+    flex-direction: column;
+  }
+
+  .result-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .kiosk-container {
+    padding: 30px 20px;
+  }
+
+  .kiosk-logo-icon {
+    font-size: 50px;
+  }
+
+  .kiosk-header h1 {
+    font-size: 24px;
+  }
+
+  .kiosk-header p {
+    font-size: 14px;
+  }
+
+  .kiosk-form .form-group label, .form-container .form-group label {
+    font-size: 14px;
+  }
+
+  .kiosk-form .form-group input, .form-container .form-group input, .form-container input[type="text"], .form-container input[type="tel"] {
+    padding: 12px 15px;
+    font-size: 14px;
+  }
+
+  .checkin-btn {
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  .message {
+    font-size: 14px;
+  }
+
+  .step {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+  }
+
+  .step-line {
+    width: 40px;
+  }
+}

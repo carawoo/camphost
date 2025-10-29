@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import DemoHeader from '@/components/DemoHeader'
-import CheckinDemo from '@/components/CheckinDemo'
-import OndamDemo from '@/components/OndamDemo'
-import WeaveDemo from '@/components/WeaveDemo'
+import DemoHeader from '../../components/DemoHeader'
+import CheckinDemo from '../../components/CheckinDemo'
+import OndamDemo from '../../components/OndamDemo'
+import WeaveDemo from '../../components/WeaveDemo'
 
 export default function DemoPage() {
   const [currentStep, setCurrentStep] = useState(0)
