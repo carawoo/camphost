@@ -527,8 +527,12 @@ export default function CheckInKiosk() {
 
         <div className="kiosk-footer">
           <p>문제가 있으시면 관리자에게 문의해주세요</p>
-          <p>📞 문의: {campgroundInfo?.contactPhone || '010-1234-5678'}</p>
-          <p>📧 이메일: {campgroundInfo?.contactEmail || 'carawoo96@gmail.com'}</p>
+          {campgroundInfo?.contactPhone && (
+            <p>📞 문의: {campgroundInfo.contactPhone}</p>
+          )}
+          {campgroundInfo?.contactEmail && (
+            <p>📧 이메일: {campgroundInfo.contactEmail}</p>
+          )}
         </div>
       </div>
     </div>

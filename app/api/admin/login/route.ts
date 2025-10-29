@@ -15,21 +15,37 @@ export async function POST(request: NextRequest) {
     // Supabase에서 캠핑장 조회 및 비밀번호 확인
     if (supabaseRest.isEnabled()) {
       try {
-        const rows = await supabaseRest.select<any[]>(
+        // 1) 정확히 일치하는 이름으로 조회
+        let rows = await supabaseRest.select<any[]>(
           'campgrounds',
           `?name=eq.${encodeURIComponent(campgroundName)}&select=id,name,admin_password`
         )
-        const camp = rows && rows[0]
+        let camp = rows && rows[0]
+        
+        // 2) 없으면 ilike로 느슨 검색
+        if (!camp) {
+          rows = await supabaseRest.select<any[]>(
+            'campgrounds',
+            `?name=ilike.${encodeURIComponent(`*${campgroundName}*`)}&select=id,name,admin_password`
+          )
+          camp = rows && rows[0]
+        }
+        
         if (camp) {
           const storedPassword = camp.admin_password || '0000' // 기본값
+          console.log(`[Login API] Found campground: ${camp.name}, stored password: ${storedPassword}, input password: ${password}`)
           if (storedPassword === password) {
             return NextResponse.json({
               success: true,
               message: '로그인 성공',
-              campgroundName: campgroundName,
+              campgroundName: camp.name,
               token: 'temp_token_' + Date.now()
             })
+          } else {
+            console.log(`[Login API] Password mismatch for ${camp.name}`)
           }
+        } else {
+          console.log(`[Login API] Campground not found: ${campgroundName}`)
         }
       } catch (error) {
         console.error('Supabase 로그인 조회 오류:', error)
