@@ -12,25 +12,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Supabase에서 캠핑장 조회 및 비밀번호 확인
+    // Supabase에서 캠핑장 조회 및 비밀번호 확인 (정확한 일치만)
     if (supabaseRest.isEnabled()) {
       try {
-        // 1) 정확히 일치하는 이름으로 조회
-        let rows = await supabaseRest.select<any[]>(
+        // 정확히 일치하는 이름으로만 조회
+        const rows = await supabaseRest.select<any[]>(
           'campgrounds',
           `?name=eq.${encodeURIComponent(campgroundName)}&select=id,name,admin_password`
         )
-        let camp = rows && rows[0]
-        
-        // 2) 없으면 ilike로 느슨 검색
-        if (!camp) {
-          rows = await supabaseRest.select<any[]>(
-            'campgrounds',
-            `?name=ilike.${encodeURIComponent(`*${campgroundName}*`)}&select=id,name,admin_password`
-          )
-          camp = rows && rows[0]
-        }
-        
+        const camp = rows && rows[0]
+
         if (camp) {
           const storedPassword = camp.admin_password || '0000' // 기본값
           console.log(`[Login API] Found campground: ${camp.name}, stored password: ${storedPassword}, input password: ${password}`)
@@ -39,10 +30,15 @@ export async function POST(request: NextRequest) {
               success: true,
               message: '로그인 성공',
               campgroundName: camp.name,
+              campgroundId: camp.id,
               token: 'temp_token_' + Date.now()
             })
           } else {
             console.log(`[Login API] Password mismatch for ${camp.name}`)
+            return NextResponse.json(
+              { error: '캠핑장 이름 또는 비밀번호가 올바르지 않습니다.' },
+              { status: 401 }
+            )
           }
         } else {
           console.log(`[Login API] Campground not found: ${campgroundName}`)

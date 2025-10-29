@@ -58,8 +58,16 @@ export default function AdminPage() {
       })
 
       if (response.ok) {
+        const data = await response.json()
         alert('자동 로그인 성공! 관리자 페이지로 이동합니다.')
-        window.location.href = `/admin/dashboard?campground=${encodeURIComponent(campgroundName)}`
+        // API가 반환한 정확한 캠핑장 이름과 ID 사용
+        const urlParams = new URLSearchParams({
+          campground: data.campgroundName
+        })
+        if (data.campgroundId) {
+          urlParams.append('id', data.campgroundId)
+        }
+        window.location.href = `/admin/dashboard?${urlParams.toString()}`
       } else {
         alert('자동 로그인에 실패했습니다. 수동으로 로그인해주세요.')
       }
@@ -71,7 +79,7 @@ export default function AdminPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!loginForm.campgroundName || !loginForm.password) {
       alert('캠핑장 이름과 비밀번호를 입력해주세요.')
       return
@@ -90,8 +98,14 @@ export default function AdminPage() {
       if (response.ok) {
         const data = await response.json()
         alert('로그인 성공! 관리자 페이지로 이동합니다.')
-        // 대시보드로 리다이렉트
-        window.location.href = `/admin/dashboard?campground=${encodeURIComponent(loginForm.campgroundName)}`
+        // API가 반환한 정확한 캠핑장 이름과 ID 사용
+        const urlParams = new URLSearchParams({
+          campground: data.campgroundName
+        })
+        if (data.campgroundId) {
+          urlParams.append('id', data.campgroundId)
+        }
+        window.location.href = `/admin/dashboard?${urlParams.toString()}`
       } else {
         const errorData = await response.json()
         alert(errorData.error || '로그인에 실패했습니다.')

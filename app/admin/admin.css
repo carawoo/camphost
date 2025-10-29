@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
 }
 
 .login-container {
@@ -241,7 +241,7 @@
 .admin-dashboard {
   min-height: 100vh;
   background: #f8f9fa;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
 }
 
 .dashboard-container {
@@ -692,22 +692,40 @@
   .dashboard-container {
     padding: 15px;
   }
-  
+
   .dashboard-header {
     padding: 20px;
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .header-left {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
   }
-  
+
   .header-right {
     width: 100%;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .campground-name {
+    font-size: 13px;
+    padding: 6px 12px;
+    white-space: nowrap;
+  }
+
+  .logout-btn {
+    font-size: 13px;
+    padding: 6px 12px;
+    white-space: nowrap;
+  }
+
+  .header-right .action-btn.secondary {
+    font-size: 13px;
+    padding: 8px 12px;
   }
   
   .feature-grid {
@@ -727,11 +745,34 @@
   .welcome-section h2 {
     font-size: 24px;
   }
-  
+
   .feature-card,
   .quick-actions,
   .recent-activity {
     padding: 20px;
+  }
+
+  .dashboard-header {
+    padding: 15px;
+  }
+
+  .logo h1 {
+    font-size: 18px;
+  }
+
+  .campground-name {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .logout-btn {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .header-right .action-btn.secondary {
+    font-size: 12px;
+    padding: 6px 10px;
   }
 }
 
