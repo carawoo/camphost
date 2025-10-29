@@ -21,6 +21,7 @@ export default function CheckInKiosk() {
   const [foundReservation, setFoundReservation] = useState<Reservation | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
   const [campgroundInfo, setCampgroundInfo] = useState<CampgroundInfo | null>(null)
+  const [guidelines, setGuidelines] = useState<string>('')
   const [campgroundId, setCampgroundId] = useState<string | null>(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
 
@@ -46,6 +47,7 @@ export default function CheckInKiosk() {
               address: row.address || '',
               description: row.description || ''
             })
+            setGuidelines(row.guidelines || '')
             setCampgroundId(row.id)
             return
           }
@@ -151,21 +153,31 @@ export default function CheckInKiosk() {
         if (!campId) {
           const nameToUse = nameParam || campgroundInfo?.name
           if (nameToUse) {
+            // 1) 정확히 일치
             const camps = await supabaseRest.select<any[]>('campgrounds', `?name=eq.${encodeURIComponent(nameToUse)}&select=id`)
             campId = camps && camps[0]?.id
+            // 2) 없으면 ilike로 느슨검색
+            if (!campId) {
+              const like = await supabaseRest.select<any[]>('campgrounds', `?name=ilike.*${encodeURIComponent(nameToUse)}*&select=id`)
+              campId = like && like[0]?.id
+            }
             if (campId) setCampgroundId(campId)
           }
         }
         if (campId) {
           // 전화번호 유연 매칭: 숫자만/하이픈형 모두 시도
           const phoneDigits = phone.replace(/\D/g, '')
-          const phoneHyphen = phoneDigits.length === 11 ? `${phoneDigits.slice(0,3)}-${phoneDigits.slice(3,7)}-${phoneDigits.slice(7)}` : phone
+          const phoneHyphen = phoneDigits.length === 11
+            ? `${phoneDigits.slice(0,3)}-${phoneDigits.slice(3,7)}-${phoneDigits.slice(7)}`
+            : (phoneDigits.length === 10
+              ? `${phoneDigits.slice(0,3)}-${phoneDigits.slice(3,6)}-${phoneDigits.slice(6)}`
+              : phone)
           const orParam = encodeURIComponent(`phone.eq.${phoneDigits},phone.eq.${phoneHyphen}`)
           // 이름은 부분/대소문자 무시 매칭
           const encodedName = encodeURIComponent(`*${guestName}*`)
           const rows = await supabaseRest.select<any[]>(
             'reservations',
-            `?campground_id=eq.${campId}&guest_name=ilike.${encodedName}&or=(${orParam})&select=*`
+            `?campground_id=eq.${campId}&guest_name=ilike.${encodedName}&or=(${orParam})&status=in.(confirmed,checked-in)&order=check_in_date.desc&select=*`
           )
           const r = rows && rows[0]
           if (r) {
@@ -180,6 +192,30 @@ export default function CheckInKiosk() {
               totalAmount: r.total_amount || 0,
               status: r.status,
               createdAt: r.created_at
+            }
+          } else {
+            // 최종 폴백: 이름만 ilike로 가져온 뒤 전화번호는 digits-only로 클라이언트 비교
+            const broad = await supabaseRest.select<any[]>(
+              'reservations',
+              `?campground_id=eq.${campId}&guest_name=ilike.${encodedName}&order=check_in_date.desc&select=*`
+            )
+            const digitsOnly = (s: string) => String(s || '').replace(/\D/g, '')
+            const candidates = (broad || []).filter(row => digitsOnly(row.phone) === phoneDigits)
+            candidates.sort((a,b) => new Date(b.check_in_date).getTime() - new Date(a.check_in_date).getTime())
+            const match = candidates.find(c => c.status !== 'checked-out') || candidates[0]
+            if (match) {
+              reservation = {
+                id: match.id,
+                guestName: match.guest_name,
+                phone: match.phone,
+                roomNumber: match.room_number || '',
+                checkInDate: match.check_in_date,
+                checkOutDate: match.check_out_date,
+                guests: match.guests || 1,
+                totalAmount: match.total_amount || 0,
+                status: match.status,
+                createdAt: match.created_at
+              }
             }
           }
         }
@@ -207,13 +243,15 @@ export default function CheckInKiosk() {
       return
     }
 
-    // 체크인 날짜 확인 (테스트를 위해 임시로 비활성화)
-    // const today = new Date().toISOString().split('T')[0]
-    // if (reservation.checkInDate !== today) {
-    //   setErrorMessage(`체크인 날짜가 아닙니다. 체크인 날짜: ${reservation.checkInDate}`)
-    //   setStep('error')
-    //   return
-    // }
+    // 체크인 날짜 확인 (체크인일 <= 오늘 <= 체크아웃일 인 경우 허용)
+    const todayStr = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
+    const toDate = (s: string) => new Date(`${s}T00:00:00`)
+    const inRange = toDate(reservation.checkInDate) <= toDate(todayStr) && toDate(todayStr) <= toDate(reservation.checkOutDate)
+    if (!inRange) {
+      setErrorMessage(`체크인은 ${reservation.checkInDate} ~ ${reservation.checkOutDate} 기간에만 가능합니다.`)
+      setStep('error')
+      return
+    }
 
     setFoundReservation(reservation)
     setStep('confirm')
@@ -238,13 +276,32 @@ export default function CheckInKiosk() {
       let updated = false
       try {
         if (name && supabaseRest.isEnabled()) {
-          await (supabaseRest as any).upsert('reservations', { id: foundReservation.id, status: 'checked-in' }, 'id')
+          await (supabaseRest as any).update('reservations', { status: 'checked-in', updated_at: new Date().toISOString() }, `?id=eq.${foundReservation.id}`)
           updated = true
         }
       } catch {}
       if (!updated) {
         updateReservationStatus(foundReservation.id, 'checked-in')
       }
+      // 이메일 알림 전송 (오도이촌 고정 주소로 사장님 알림)
+      try {
+        await fetch('/api/notify/checkin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            campgroundName: campgroundInfo?.name,
+            guestName: foundReservation.guestName,
+            phone: foundReservation.phone,
+            roomNumber: foundReservation.roomNumber,
+            checkInDate: foundReservation.checkInDate,
+            checkOutDate: foundReservation.checkOutDate,
+            guests: foundReservation.guests,
+            amount: foundReservation.totalAmount,
+            contactPhone: campgroundInfo?.contactPhone,
+            contactEmail: campgroundInfo?.contactEmail
+          })
+        })
+      } catch {}
       setStep('success')
       setShowSuccessModal(true)
     } catch (error) {
@@ -456,10 +513,8 @@ export default function CheckInKiosk() {
               <div className="result-message" style={{ textAlign: 'left' }}>
                 <strong>이용 안내</strong>
                 <ul style={{ marginTop: 8, paddingLeft: 18, lineHeight: 1.7 }}>
-                  <li>야간 소음 자제 부탁드립니다. 22시 이후 정숙.</li>
-                  <li>불꽃놀이는 지정된 공간에서만 가능합니다.</li>
-                  <li>분리수거는 출구 쪽 수거함을 이용해주세요.</li>
-                  <li>위급상황은 상단의 연락처로 바로 연락주세요.</li>
+                  {(guidelines || '야간 소음 자제 부탁드립니다. 22시 이후 정숙.\n불꽃놀이는 지정된 공간에서만 가능합니다.\n분리수거는 출구 쪽 수거함을 이용해주세요.\n위급상황은 상단의 연락처로 바로 연락주세요.')
+                    .split('\n').filter(Boolean).map((g, i) => (<li key={i}>{g}</li>))}
                 </ul>
               </div>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>

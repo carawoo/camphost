@@ -22,8 +22,11 @@ import { supabaseRest } from '@/services/supabaseRest'
 export default function ReservationManagement() {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [campgroundId, setCampgroundId] = useState<string>('')
+  const [editing, setEditing] = useState<Reservation | null>(null)
+  const [repeatCounts, setRepeatCounts] = useState<Record<string, number>>({})
   const [newReservation, setNewReservation] = useState({
     guestName: '',
     phone: '',
@@ -71,12 +74,24 @@ export default function ReservationManagement() {
             updatedAt: r.updated_at
           }))
           setReservations(mapped)
+          // 재방문 집계 (동일 이름 + 동일 연락처)
+          const toKey = (n: string, p: string) => `${n.trim()}|${String(p||'').replace(/\D/g,'')}`
+          const counts: Record<string, number> = {}
+          mapped.forEach(m => {
+            const k = toKey(m.guestName, m.phone)
+            counts[k] = (counts[k] || 0) + 1
+          })
+          setRepeatCounts(counts)
           return
         } catch {}
       }
       setReservations([])
+      setRepeatCounts({})
     }
     loadReservations()
+    // 폴링으로 외부(키오스크 등) 변경 반영
+    const interval = setInterval(loadReservations, 5000)
+    return () => clearInterval(interval)
   }, [campgroundId])
 
   const filteredReservations = reservations.filter(reservation => 
@@ -118,6 +133,10 @@ export default function ReservationManagement() {
           updatedAt: r.updated_at
         }))
         setReservations(mapped)
+        const toKey = (n: string, p: string) => `${n.trim()}|${String(p||'').replace(/\D/g,'')}`
+        const counts: Record<string, number> = {}
+        mapped.forEach(m => { const k = toKey(m.guestName, m.phone); counts[k] = (counts[k] || 0) + 1 })
+        setRepeatCounts(counts)
       }
       
       setNewReservation({
@@ -155,6 +174,10 @@ export default function ReservationManagement() {
           updatedAt: r.updated_at
         }))
         setReservations(mapped)
+        const toKey = (n: string, p: string) => `${n.trim()}|${String(p||'').replace(/\D/g,'')}`
+        const counts: Record<string, number> = {}
+        mapped.forEach(m => { const k = toKey(m.guestName, m.phone); counts[k] = (counts[k] || 0) + 1 })
+        setRepeatCounts(counts)
       }
     } catch (error) {
       alert('상태 업데이트 중 오류가 발생했습니다.')
@@ -181,10 +204,56 @@ export default function ReservationManagement() {
             updatedAt: r.updated_at
           }))
           setReservations(mapped)
+          const toKey = (n: string, p: string) => `${n.trim()}|${String(p||'').replace(/\D/g,'')}`
+          const counts: Record<string, number> = {}
+          mapped.forEach(m => { const k = toKey(m.guestName, m.phone); counts[k] = (counts[k] || 0) + 1 })
+          setRepeatCounts(counts)
         }
       } catch (error) {
         alert('예약 삭제 중 오류가 발생했습니다.')
       }
+    }
+  }
+
+  const openEdit = (res: Reservation) => {
+    setEditing(res)
+    setShowEditModal(true)
+  }
+
+  const handleUpdateReservationFields = async () => {
+    if (!editing) return
+    try {
+      if (supabaseRest.isEnabled()) {
+        await supabaseRest.update('reservations', {
+          guest_name: editing.guestName,
+          phone: editing.phone,
+          room_number: editing.roomNumber || null,
+          check_in_date: editing.checkInDate,
+          check_out_date: editing.checkOutDate,
+          guests: editing.guests,
+          total_amount: editing.totalAmount
+        }, `?id=eq.${editing.id}`)
+        const rows = await supabaseRest.select<any[]>('reservations', `?campground_id=eq.${campgroundId}&select=*&order=updated_at.desc`)
+        const mapped: Reservation[] = (rows || []).map(r => ({
+          id: r.id,
+          guestName: r.guest_name,
+          phone: r.phone,
+          roomNumber: r.room_number || '',
+          checkInDate: r.check_in_date,
+          checkOutDate: r.check_out_date,
+          guests: r.guests || 1,
+          totalAmount: r.total_amount || 0,
+          status: r.status,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at
+        }))
+        setReservations(mapped)
+      }
+      setShowEditModal(false)
+      setEditing(null)
+      alert('예약 정보가 수정되었습니다.')
+    } catch (e) {
+      alert('수정 중 오류가 발생했습니다.')
     }
   }
 
@@ -219,7 +288,7 @@ export default function ReservationManagement() {
             <Link href="/admin/dashboard" className="back-link">← 대시보드로</Link>
             <div className="logo">
               <span className="logo-icon">📋</span>
-              <h1>예약 관리</h1>
+              <h1>체크인/체크아웃 관리</h1>
             </div>
           </div>
           <div className="header-right">
@@ -298,6 +367,12 @@ export default function ReservationManagement() {
                     <span className="label">금액:</span>
                     <span className="amount">{reservation.totalAmount.toLocaleString()}원</span>
                   </div>
+                  <div className="detail-item">
+                    <span className="label">재방문:</span>
+                    <span>
+                      {Math.max(0, (repeatCounts[`${reservation.guestName.trim()}|${String(reservation.phone||'').replace(/\D/g,'')}`] || 1) - 1)}회
+                    </span>
+                  </div>
                 </div>
 
                 <div className="reservation-actions">
@@ -309,6 +384,22 @@ export default function ReservationManagement() {
                       체크인 처리
                     </button>
                   )}
+                  {reservation.status === 'confirmed' && (
+                    <button 
+                      onClick={() => openEdit(reservation)}
+                      className="action-btn secondary"
+                    >
+                      정보 수정
+                    </button>
+                  )}
+                  {reservation.status === 'confirmed' && (
+                    <button 
+                      onClick={() => handleDeleteReservation(reservation.id)}
+                      className="action-btn danger"
+                    >
+                      삭제
+                    </button>
+                  )}
                   {reservation.status === 'checked-in' && (
                     <button 
                       onClick={() => handleUpdateStatus(reservation.id, 'checked-out')}
@@ -317,13 +408,6 @@ export default function ReservationManagement() {
                       체크아웃 처리
                     </button>
                   )}
-                  <Link 
-                    href={`/kiosk?guestName=${encodeURIComponent(reservation.guestName)}&phone=${encodeURIComponent(reservation.phone)}`}
-                    className="action-btn secondary"
-                    target="_blank"
-                  >
-                    키오스크 체크인
-                  </Link>
                 </div>
               </div>
             ))}
@@ -409,6 +493,83 @@ export default function ReservationManagement() {
             </div>
           </div>
         )}
+
+      {/* 예약 수정 모달 */}
+      {showEditModal && editing && (
+        <div className="demo-modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="demo-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>예약 정보 수정</h3>
+              <button className="close-btn" onClick={() => setShowEditModal(false)}>×</button>
+            </div>
+            <div className="modal-content">
+              <div className="form-group">
+                <label>고객명 *</label>
+                <input 
+                  type="text" 
+                  value={editing.guestName}
+                  onChange={(e) => setEditing({ ...(editing as Reservation), guestName: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>연락처 *</label>
+                <input 
+                  type="tel" 
+                  value={editing.phone}
+                  onChange={(e) => setEditing({ ...(editing as Reservation), phone: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>객실번호</label>
+                <input 
+                  type="text" 
+                  value={editing.roomNumber || ''}
+                  onChange={(e) => setEditing({ ...(editing as Reservation), roomNumber: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>체크인 날짜 *</label>
+                <input 
+                  type="date" 
+                  value={editing.checkInDate}
+                  onChange={(e) => setEditing({ ...(editing as Reservation), checkInDate: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>체크아웃 날짜 *</label>
+                <input 
+                  type="date" 
+                  value={editing.checkOutDate}
+                  onChange={(e) => setEditing({ ...(editing as Reservation), checkOutDate: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>인원 수</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  max="10"
+                  value={editing.guests}
+                  onChange={(e) => setEditing({ ...(editing as Reservation), guests: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+              <div className="form-group">
+                <label>총 금액 (원)</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  value={editing.totalAmount}
+                  onChange={(e) => setEditing({ ...(editing as Reservation), totalAmount: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="modal-actions">
+                <button className="btn btn-outline" onClick={() => setShowEditModal(false)}>취소</button>
+                <button className="btn" onClick={handleUpdateReservationFields}>저장</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )

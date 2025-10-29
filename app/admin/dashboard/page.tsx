@@ -104,6 +104,18 @@ export default function AdminDashboard() {
         setRecentActivities([])
       }
     })()
+    // 간단 폴링으로 최신 상태 반영
+    const interval = setInterval(async () => {
+      try {
+        if (!campgroundId || !supabaseRest.isEnabled()) return
+        const rows = await supabaseRest.select<Array<{ status: string; updated_at: string }>>(
+          'reservations',
+          `?campground_id=eq.${campgroundId}&select=status,updated_at&order=updated_at.desc&limit=3`
+        )
+        setRecentActivities(rows || [])
+      } catch {}
+    }, 5000)
+    return () => clearInterval(interval)
   }, [campgroundId])
 
   const handleLogout = () => {
@@ -177,6 +189,15 @@ export default function AdminDashboard() {
             >
               ⚙️ 캠핑장 정보
             </button>
+            <button 
+              className="action-btn secondary"
+              onClick={() => {
+                const url = `/kiosk?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`
+                window.open(url, '_blank')
+              }}
+            >
+              🖥️ 키오스크 열기
+            </button>
             <span className="campground-name">{campgroundName}</span>
             <button onClick={handleLogout} className="logout-btn">로그아웃</button>
           </div>
@@ -196,18 +217,16 @@ export default function AdminDashboard() {
               <div className="feature-icon">🚪</div>
               <h3>무인 체크인/체크아웃</h3>
               <p>키오스크를 통한 무인 체크인/체크아웃 관리</p>
-              <Link href="/admin/reservations" className="feature-link">
+              <Link href={`/admin/reservations?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`} className="feature-link">
                 <div className="feature-status">이동하기</div>
               </Link>
             </div>
 
-            <div className="feature-card active">
+            <div className="feature-card disabled">
               <div className="feature-icon">📋</div>
               <h3>예약 관리</h3>
-              <p>캠핑장 예약 현황을 확인하고 관리하세요</p>
-              <Link href="/admin/reservations" className="feature-link">
-                <div className="feature-status">이동하기</div>
-              </Link>
+              <p>외부 채널 연동(캠핏/땡큐캠핑/네이버예약) 출시 예정</p>
+              <div className="feature-status">준비 중</div>
             </div>
 
             {/* 준비중인 기능들 */}
@@ -269,8 +288,8 @@ export default function AdminDashboard() {
           <div className="quick-actions">
             <h3>빠른 액션</h3>
             <div className="action-buttons">
-              <Link href="/admin/reservations" className="action-btn primary">
-                🚪 체크인 처리
+              <Link href={`/kiosk?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`} className="action-btn primary" target="_blank">
+                🚪 키오스크 열기
               </Link>
               <Link href={`/admin/stats?campground=${encodeURIComponent(campgroundName)}`} className="action-btn secondary">
                 📊 오늘의 통계 보기

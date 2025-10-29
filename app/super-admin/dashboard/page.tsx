@@ -43,6 +43,7 @@ export default function SuperAdminDashboard() {
   const [metrics, setMetrics] = useState<{ total: number; active: number; admin: number; kiosk: number }>({ total: 0, active: 0, admin: 0, kiosk: 0 })
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [createdCampground, setCreatedCampground] = useState<Campground | null>(null)
+  const [visibleCampgrounds, setVisibleCampgrounds] = useState<Campground[]>([])
 
   // 인증 확인
   useEffect(() => {
@@ -73,18 +74,38 @@ export default function SuperAdminDashboard() {
         }
         // 폴백: 로컬 서비스 길이로 집계
         setMetrics({
-          total: campgrounds.length,
-          active: campgrounds.filter(c => c.status === 'active').length,
-          admin: campgrounds.length,
-          kiosk: campgrounds.length
+          total: (visibleCampgrounds.length || campgrounds.length),
+          active: (visibleCampgrounds.length ? visibleCampgrounds : campgrounds).filter(c => c.status === 'active').length,
+          admin: (visibleCampgrounds.length || campgrounds.length),
+          kiosk: (visibleCampgrounds.length || campgrounds.length)
         })
       } catch {
         setMetrics({
-          total: campgrounds.length,
-          active: campgrounds.filter(c => c.status === 'active').length,
-          admin: campgrounds.length,
-          kiosk: campgrounds.length
+          total: (visibleCampgrounds.length || campgrounds.length),
+          active: (visibleCampgrounds.length ? visibleCampgrounds : campgrounds).filter(c => c.status === 'active').length,
+          admin: (visibleCampgrounds.length || campgrounds.length),
+          kiosk: (visibleCampgrounds.length || campgrounds.length)
         })
+      }
+    })()
+  }, [campgrounds, visibleCampgrounds])
+
+  // Supabase와 동기화하여 삭제된 항목은 표시 제외
+  useEffect(() => {
+    ;(async () => {
+      if (!supabaseRest.isEnabled()) {
+        setVisibleCampgrounds(campgrounds)
+        return
+      }
+      try {
+        const rows = await supabaseRest.select<any[]>('campgrounds', '?select=id,name')
+        const validIds = new Set((rows || []).map(r => r.id))
+        // id 우선, id가 없으면 name으로 보조 매칭
+        const validNames = new Set((rows || []).map(r => r.name))
+        const filtered = campgrounds.filter(c => (c.id && validIds.has(c.id)) || validNames.has(c.name))
+        setVisibleCampgrounds(filtered)
+      } catch {
+        setVisibleCampgrounds(campgrounds)
       }
     })()
   }, [campgrounds])
@@ -103,7 +124,7 @@ export default function SuperAdminDashboard() {
   })
 
   // 필터링된 캠핑장 데이터
-  const filteredCampgrounds = campgrounds.filter(campground => {
+  const filteredCampgrounds = (visibleCampgrounds.length ? visibleCampgrounds : campgrounds).filter(campground => {
     const statusMatch = filterStatus === 'all' || campground.status === filterStatus
     const searchMatch = !searchQuery || 
       campground.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -130,6 +151,16 @@ export default function SuperAdminDashboard() {
   const handleDeleteCampground = async (id: string, name: string) => {
     if (confirm(`"${name}" 캠핑장을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
       try {
+        // Supabase에서도 삭제 반영 (id 우선, 필요 시 name 보조)
+        if (supabaseRest.isEnabled()) {
+          try {
+            await supabaseRest.delete('campgrounds', `?id=eq.${encodeURIComponent(id)}`)
+          } catch {}
+          try {
+            await supabaseRest.delete('campgrounds', `?name=eq.${encodeURIComponent(name)}`)
+          } catch {}
+        }
+
         await deleteCampground(id)
         alert(SUCCESS_MESSAGES.DELETE_SUCCESS)
       } catch (error) {
@@ -286,7 +317,7 @@ export default function SuperAdminDashboard() {
                 variant="primary"
                 onClick={() => {
                   // 모든 활성 캠핑장의 어드민 페이지를 새 탭에서 열기
-                  campgrounds.filter(c => c.status === 'active').forEach(campground => {
+                  (visibleCampgrounds.length ? visibleCampgrounds : campgrounds).filter(c => c.status === 'active').forEach(campground => {
                     window.open(campground.adminUrl, '_blank')
                   })
                 }}
@@ -297,7 +328,7 @@ export default function SuperAdminDashboard() {
                 variant="secondary"
                 onClick={() => {
                   // 모든 활성 캠핑장의 키오스크 페이지를 새 탭에서 열기
-                  campgrounds.filter(c => c.status === 'active').forEach(campground => {
+                  (visibleCampgrounds.length ? visibleCampgrounds : campgrounds).filter(c => c.status === 'active').forEach(campground => {
                     window.open(campground.kioskUrl, '_blank')
                   })
                 }}
@@ -315,31 +346,31 @@ export default function SuperAdminDashboard() {
               variant={filterStatus === 'all' ? 'primary' : 'secondary'}
               onClick={() => setFilterStatus('all')}
             >
-              전체 ({campgrounds.length})
+              전체 ({(visibleCampgrounds.length || campgrounds.length)})
             </Button>
             <Button 
               variant={filterStatus === 'active' ? 'primary' : 'secondary'}
               onClick={() => setFilterStatus('active')}
             >
-              진행중 ({campgrounds.filter(c => c.status === 'active').length})
+              진행중 ({(visibleCampgrounds.length ? visibleCampgrounds : campgrounds).filter(c => c.status === 'active').length})
             </Button>
             <Button 
               variant={filterStatus === 'pending' ? 'primary' : 'secondary'}
               onClick={() => setFilterStatus('pending')}
             >
-              대기중 ({campgrounds.filter(c => c.status === 'pending').length})
+              대기중 ({(visibleCampgrounds.length ? visibleCampgrounds : campgrounds).filter(c => c.status === 'pending').length})
             </Button>
             <Button 
               variant={filterStatus === 'suspended' ? 'primary' : 'secondary'}
               onClick={() => setFilterStatus('suspended')}
             >
-              일시정지 ({campgrounds.filter(c => c.status === 'suspended').length})
+              일시정지 ({(visibleCampgrounds.length ? visibleCampgrounds : campgrounds).filter(c => c.status === 'suspended').length})
             </Button>
             <Button 
               variant={filterStatus === 'terminated' ? 'primary' : 'secondary'}
               onClick={() => setFilterStatus('terminated')}
             >
-              계약해지 ({campgrounds.filter(c => c.status === 'terminated').length})
+              계약해지 ({(visibleCampgrounds.length ? visibleCampgrounds : campgrounds).filter(c => c.status === 'terminated').length})
             </Button>
           </div>
           

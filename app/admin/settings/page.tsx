@@ -15,6 +15,7 @@ export default function AdminSettings() {
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>(
     { visible: false, message: '', type: 'success' }
   )
+  const [guidelines, setGuidelines] = useState('야간 소음 자제 부탁드립니다. 22시 이후 정숙.\n불꽃놀이는 지정된 공간에서만 가능합니다.\n분리수거는 출구 쪽 수거함을 이용해주세요.\n위급상황은 상단의 연락처로 바로 연락주세요.')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -42,6 +43,7 @@ export default function AdminSettings() {
           if (row) {
             setCampgroundId(row.id)
             setDescription(row.description || '')
+            setGuidelines(row.guidelines || guidelines)
           }
         }
       } catch {}
@@ -59,9 +61,9 @@ export default function AdminSettings() {
     try {
       // 우선 update 시도, 실패 시 upsert로 보완
       try {
-        await (supabaseRest as any).update('campgrounds', { description }, `?id=eq.${campgroundId}`)
+        await (supabaseRest as any).update('campgrounds', { description, guidelines }, `?id=eq.${campgroundId}`)
       } catch {
-        await (supabaseRest as any).upsert('campgrounds', { id: campgroundId, description })
+        await (supabaseRest as any).upsert('campgrounds', { id: campgroundId, description, guidelines })
       }
       setToast({ visible: true, message: '저장되었습니다. 키오스크 화면에 즉시 반영됩니다.', type: 'success' })
     } catch (e: any) {
@@ -102,6 +104,14 @@ export default function AdminSettings() {
                     rows={8}
                     className="text-area"
                     placeholder={"예) 도심과 자연을 잇는 캠핑장\n분리수거는 출구 쪽 수거함을 이용해주세요."}
+                  />
+                  <label className="block text-sm font-medium text-gray-700">이용 안내 (줄바꿈으로 구분)</label>
+                  <textarea
+                    value={guidelines}
+                    onChange={(e) => setGuidelines(e.target.value)}
+                    rows={6}
+                    className="text-area"
+                    placeholder={"야간 소음 자제 부탁드립니다. 22시 이후 정숙.\n불꽃놀이는 지정된 공간에서만 가능합니다."}
                   />
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <button onClick={handleSave} className="action-btn primary" disabled={saving || !campgroundId}>
@@ -144,10 +154,9 @@ export default function AdminSettings() {
                 <div className="result-message" style={{ textAlign: 'left' }}>
                   <strong>이용 안내</strong>
                   <ul style={{ marginTop: 8, paddingLeft: 18, lineHeight: 1.7 }}>
-                    <li>야간 소음 자제 부탁드립니다. 22시 이후 정숙.</li>
-                    <li>불꽃놀이는 지정된 공간에서만 가능합니다.</li>
-                    <li>분리수거는 출구 쪽 수거함을 이용해주세요.</li>
-                    <li>위급상황은 상단의 연락처로 바로 연락주세요.</li>
+                    {(guidelines || '').split('\n').filter(Boolean).map((g, i) => (
+                      <li key={i}>{g}</li>
+                    ))}
                   </ul>
                 </div>
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
