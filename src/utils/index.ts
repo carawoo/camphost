@@ -140,7 +140,8 @@ export class ValidationUtils {
     
     Object.entries(rules).forEach(([key, validator]) => {
       const value = data[key as keyof T]
-      if (!validator(value)) {
+      const fn = validator as unknown as ((v: any) => boolean) | undefined
+      if (fn && !fn(value)) {
         errors[key as keyof T] = '유효하지 않은 값입니다.'
       }
     })

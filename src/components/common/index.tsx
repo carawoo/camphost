@@ -1,5 +1,5 @@
 import React from 'react'
-import { BaseComponentProps, ModalProps, TableColumn } from '../types'
+import { BaseComponentProps, ModalProps, TableColumn } from '@/types'
 
 // 기본 버튼 컴포넌트
 interface ButtonProps extends BaseComponentProps {

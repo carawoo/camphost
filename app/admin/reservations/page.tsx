@@ -303,7 +303,7 @@ export default function ReservationManagement() {
                 <div className="reservation-actions">
                   {reservation.status === 'confirmed' && (
                     <button 
-                      onClick={() => updateReservationStatus(reservation.id, 'checked-in')}
+                      onClick={() => handleUpdateStatus(reservation.id, 'checked-in')}
                       className="action-btn secondary"
                     >
                       체크인 처리
@@ -311,7 +311,7 @@ export default function ReservationManagement() {
                   )}
                   {reservation.status === 'checked-in' && (
                     <button 
-                      onClick={() => updateReservationStatus(reservation.id, 'checked-out')}
+                      onClick={() => handleUpdateStatus(reservation.id, 'checked-out')}
                       className="action-btn secondary"
                     >
                       체크아웃 처리

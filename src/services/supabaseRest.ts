@@ -44,6 +44,19 @@ export const supabaseRest = {
       headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
       body: JSON.stringify(payload)
     })
+  },
+  async update<T>(table: string, payload: unknown, query: string) {
+    // query example: `?id=eq.xxx`
+    return await rest<T>(`/${table}${query}&select=*`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify(payload)
+    })
+  },
+  async delete<T>(table: string, query: string) {
+    return await rest<T>(`/${table}${query}`, {
+      method: 'DELETE'
+    })
   }
 }
 

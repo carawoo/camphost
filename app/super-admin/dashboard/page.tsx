@@ -205,11 +205,19 @@ export default function SuperAdminDashboard() {
   }
 
   if (!isAuthenticated) {
-    return <Spinner size="lg" className="flex justify-center items-center h-screen" />
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spinner size="lg" />
+      </div>
+    )
   }
 
   if (isLoading) {
-    return <Spinner size="lg" className="flex justify-center items-center h-screen" />
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spinner size="lg" />
+      </div>
+    )
   }
 
   return (
@@ -402,7 +410,7 @@ export default function SuperAdminDashboard() {
                   <div className="integration-actions">
                     <div className="quick-actions">
                       <Button 
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => {
                           // 어드민 페이지를 새 탭에서 열고 자동 로그인
@@ -413,7 +421,7 @@ export default function SuperAdminDashboard() {
                         🚀 어드민 자동 로그인
                       </Button>
                       <Button 
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => {
                           // 키오스크 페이지를 새 탭에서 열고 테스트 모드

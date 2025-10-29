@@ -124,6 +124,7 @@ export interface AppConfig {
     campgrounds: string
     reservations: string
     campgroundInfo: string
+    superAdmin: string
   }
   defaultPagination: {
     page: number
