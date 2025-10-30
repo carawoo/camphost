@@ -237,20 +237,30 @@ export default function SuperAdminDashboard() {
   const handleDeleteCampground = async (id: string, name: string) => {
     if (confirm(`"${name}" 캠핑장을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
       try {
-        // Supabase에서도 삭제 반영 (id 우선, 필요 시 name 보조)
+        // Supabase에서 삭제 (UUID 우선)
         if (supabaseRest.isEnabled()) {
           try {
+            console.log('Deleting campground from Supabase:', id, name)
             await supabaseRest.delete('campgrounds', `?id=eq.${encodeURIComponent(id)}`)
-          } catch {}
-          try {
-            await supabaseRest.delete('campgrounds', `?name=eq.${encodeURIComponent(name)}`)
-          } catch {}
+            console.log('Successfully deleted from Supabase')
+          } catch (error) {
+            console.error('Failed to delete from Supabase:', error)
+            // 에러 발생 시 사용자에게 알림
+            alert(`Supabase 삭제 실패: ${error instanceof Error ? error.message : String(error)}`)
+            return
+          }
         }
 
+        // 로컬 스토리지에서 삭제
         await deleteCampground(id)
+
+        // visibleCampgrounds에서도 제거 (즉시 UI 업데이트)
+        setVisibleCampgrounds(prev => prev.filter(c => c.id !== id && c.name !== name))
+
         alert(SUCCESS_MESSAGES.DELETE_SUCCESS)
       } catch (error) {
-        alert(ERROR_MESSAGES.UNKNOWN_ERROR)
+        console.error('Delete error:', error)
+        alert(`${ERROR_MESSAGES.UNKNOWN_ERROR}\n\n${error instanceof Error ? error.message : String(error)}`)
       }
     }
   }
