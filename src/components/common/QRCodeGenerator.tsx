@@ -20,10 +20,8 @@ export default function QRCodeGenerator({
   useEffect(() => {
     if (!canvasRef.current) return
 
-    // 캠핑장별 고유 URL 생성 (프로토콜과 도메인은 환경에 따라 설정)
-    const baseUrl = typeof window !== 'undefined'
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_BASE_URL || 'https://camphost.example.com'
+    // 캠핑장별 고유 URL 생성 (항상 프로덕션 URL 사용)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://camphost.real-e.space'
 
     const kioskUrl = `${baseUrl}/kiosk?id=${encodeURIComponent(campgroundId)}&campground=${encodeURIComponent(campgroundName)}`
     setQrUrl(kioskUrl)
