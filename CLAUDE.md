@@ -237,6 +237,80 @@ TASK-004 → Test Engineer가 테스트 작성
 
 ---
 
+## 🔧 CLI 도구
+
+Pioneer는 Epic과 Task를 관리하는 두 가지 방법을 제공합니다:
+
+### Claude Code Skills (권장)
+
+**Skills는 Claude가 자동으로 호출합니다** - 자연어로 요청하면 됩니다:
+
+```
+"새 Epic 만들어줘: 사용자 인증 기능"
+"Task 업데이트해줘 TASK-abc1234 상태를 진행중으로"
+"Epic 상태 보여줘 EPIC-e8a9c2d"
+"상태 점검 해줘"
+```
+
+**장점**: 자연어 인터페이스, Claude가 자동 판단, 워크플로우 중심, 오류 방지
+**단점**: 미리 정의된 워크플로우로 제한
+
+**Skills 위치**: `.claude/skills/` (4개 Skills 제공)
+- `epic-management` - Epic 관리
+- `task-management` - Task 관리
+- `start-epic` - Epic 시작 워크플로우
+- `health-check` - 구조 검증
+
+### CLI Scripts (고급 사용자 / 자동화)
+
+Bash 스크립트로 직접 제어:
+
+```bash
+# Epic 생성 및 브랜치 설정
+EPIC_ID=$(.pioneer/scripts/epic-manager.sh create "User Auth" high)
+git checkout -b "feature/$EPIC_ID"
+.pioneer/scripts/epic-manager.sh set-branch "$EPIC_ID" "feature/$EPIC_ID"
+
+# Task 생성 (feat = 구현 + 테스트)
+.pioneer/scripts/task-manager.sh create "Login API" high "$EPIC_ID" feat
+
+# Task 상태 업데이트
+.pioneer/scripts/task-manager.sh update TASK-abc1234 IN_PROGRESS developer "Started"
+.pioneer/scripts/task-manager.sh update TASK-abc1234 READY_FOR_TEST test-engineer "Implementation done"
+
+# Epic 진행 상황 확인
+.pioneer/scripts/epic-manager.sh show "$EPIC_ID"
+.pioneer/scripts/task-manager.sh list active "$EPIC_ID"
+
+# PR 생성 및 Epic 완료
+gh pr create --title "feat: User Auth" --body-file ".pioneer/epics/$EPIC_ID/epic.md"
+.pioneer/scripts/epic-manager.sh set-pr "$EPIC_ID" "https://github.com/org/repo/pull/123"
+.pioneer/scripts/epic-manager.sh complete "$EPIC_ID"
+```
+
+**장점**: 완전한 제어, 스크립트 가능, 자동화 친화적
+**단점**: 명령 구문 지식 필요, 오류 가능성 높음
+
+### 언제 무엇을 사용할까?
+
+**Skills 사용 (권장)**:
+- 새 Epic 시작 (자동 브랜치 생성)
+- 일반적인 Task 타입 생성 (feat, test, docs)
+- Task 상태 업데이트 (의도가 명확)
+- Claude와 대화형 작업
+
+**CLI Scripts 사용**:
+- 워크플로우 자동화 (CI/CD)
+- 대량 작업 (여러 Task 생성)
+- 커스텀 Task 타입 또는 엣지 케이스
+- 파라미터 완전 제어 필요
+
+**자세한 내용**:
+- [CLI Reference](.pioneer/workflow/cli-reference.md) - 워크플로우 중심 가이드 (언제, 왜)
+- [Scripts README](.pioneer/scripts/README.md) - 기술 레퍼런스 (전체 명령 구문, 어떻게)
+
+---
+
 ## 📋 워크플로우
 
 **상세 워크플로우 문서**:
