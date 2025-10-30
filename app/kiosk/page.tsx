@@ -216,7 +216,10 @@ export default function CheckInKiosk() {
               guests: r.guests || 1,
               totalAmount: r.total_amount || 0,
               status: r.status,
-              createdAt: r.created_at
+              createdAt: r.created_at,
+              charcoalReservationTime: r.charcoal_reservation_time || undefined,
+              actualCheckinTime: r.actual_checkin_time || undefined,
+              actualCheckoutTime: r.actual_checkout_time || undefined
             }
           } else {
             // 최종 폴백: 이름만 ilike로 가져온 뒤 전화번호는 digits-only로 클라이언트 비교
@@ -239,7 +242,10 @@ export default function CheckInKiosk() {
                 guests: match.guests || 1,
                 totalAmount: match.total_amount || 0,
                 status: match.status,
-                createdAt: match.created_at
+                createdAt: match.created_at,
+                charcoalReservationTime: match.charcoal_reservation_time || undefined,
+                actualCheckinTime: match.actual_checkin_time || undefined,
+                actualCheckoutTime: match.actual_checkout_time || undefined
               }
             }
           }
@@ -729,29 +735,76 @@ export default function CheckInKiosk() {
                 <span className="result-icon">ℹ️</span>
                 <h3 className="result-title">
                   {mode === 'checkin'
-                    ? (foundReservation.status === 'checked-in' ? '이미 체크인 완료' : '이미 체크아웃 완료')
+                    ? (foundReservation.status === 'checked-in' ? '체크인 정보' : '이미 체크아웃 완료')
                     : '이미 체크아웃 완료'}
                 </h3>
-                <p className="result-message">
-                  {mode === 'checkin' && foundReservation.status === 'checked-in' && '이미 체크인을 완료하셨습니다.'}
+                <p className="result-message" style={{ marginBottom: 16 }}>
+                  {mode === 'checkin' && foundReservation.status === 'checked-in' && '체크인 정보를 확인하세요.'}
                   {mode === 'checkin' && foundReservation.status === 'checked-out' && '이미 체크아웃을 완료하셨습니다.'}
                   {mode === 'checkout' && '이미 체크아웃을 완료하셨습니다.'}
                 </p>
 
-                {/* 예약 정보 */}
-                <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                  <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '12px' }}>예약 정보</div>
-                  <div style={{ display: 'grid', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#6b7280', fontSize: '14px' }}>예약자</span>
-                      <span style={{ fontWeight: 600, fontSize: '14px' }}>{foundReservation.guestName}</span>
+                {/* 체크인 완료 시 상세 정보 표시 */}
+                {mode === 'checkin' && foundReservation.status === 'checked-in' && (
+                  <div style={{ marginTop: 16 }}>
+                    <div className="confirm-info" style={{ textAlign: 'left' }}>
+                      <div className="info-item">
+                        <span className="label">캠핑장</span>
+                        <span className="value">{campgroundInfo?.name || '캠핑장'}</span>
+                      </div>
+                      {campgroundInfo?.description && (
+                        <div className="info-item" style={{ display: 'block', borderBottom: 'none' }}>
+                          <div className="label" style={{ marginBottom: 6 }}>사장님 안내말씀</div>
+                          <div className="value" style={{ whiteSpace: 'pre-wrap' }}>{campgroundInfo.description}</div>
+                        </div>
+                      )}
+                      <div className="info-item">
+                        <span className="label">체크인/아웃</span>
+                        <span className="value">{`${formatDate(foundReservation.checkInDate)} ~ ${formatDate(foundReservation.checkOutDate)}`}</span>
+                      </div>
+                      {campgroundInfo?.address && (
+                        <div className="info-item">
+                          <span className="label">주소</span>
+                          <span className="value">{campgroundInfo.address}</span>
+                        </div>
+                      )}
+                      <div className="info-item">
+                        <span className="label">문의</span>
+                        <span className="value">{campgroundInfo?.contactPhone || '-'} / {campgroundInfo?.contactEmail || '-'}</span>
+                      </div>
+                      {foundReservation.charcoalReservationTime && (
+                        <div className="info-item" style={{ display: 'block', borderTop: '1px solid #e7e1d7', paddingTop: 12, marginTop: 12 }}>
+                          <div className="label" style={{ marginBottom: 6 }}>🔥 숯불 예약 시간</div>
+                          <div className="value" style={{ fontSize: 16, fontWeight: 600, color: '#ea580c' }}>{foundReservation.charcoalReservationTime}</div>
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#6b7280', fontSize: '14px' }}>객실</span>
-                      <span style={{ fontWeight: 600, fontSize: '14px' }}>{foundReservation.roomNumber}</span>
+                    <div className="result-message" style={{ textAlign: 'left', marginTop: 16 }}>
+                      <strong>이용 안내</strong>
+                      <ul style={{ marginTop: 8, paddingLeft: 18, lineHeight: 1.7 }}>
+                        {(guidelines || '야간 소음 자제 부탁드립니다. 22시 이후 정숙.\n불꽃놀이는 지정된 공간에서만 가능합니다.\n분리수거는 출구 쪽 수거함을 이용해주세요.\n위급상황은 상단의 연락처로 바로 연락주세요.')
+                          .split('\n').filter(Boolean).map((g, i) => (<li key={i}>{g}</li>))}
+                      </ul>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {/* 체크아웃 완료 시 간단한 예약 정보만 표시 */}
+                {(mode === 'checkout' || (mode === 'checkin' && foundReservation.status === 'checked-out')) && (
+                  <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                    <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '12px' }}>예약 정보</div>
+                    <div style={{ display: 'grid', gap: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>예약자</span>
+                        <span style={{ fontWeight: 600, fontSize: '14px' }}>{foundReservation.guestName}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>객실</span>
+                        <span style={{ fontWeight: 600, fontSize: '14px' }}>{foundReservation.roomNumber}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* 실제 체크인 시간 */}
                 {foundReservation.actualCheckinTime && (
