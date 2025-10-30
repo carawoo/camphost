@@ -1,0 +1,226 @@
+@startuml Campground Service - Level 4 Code
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' CampHost - Campground Service (Level 4: Code)
+' ============================================================================
+'
+' 🔗 코드 경로:
+'   - lib/campground.ts (단일 캠핑장 정보 관리)
+'   - lib/campgrounds.ts (전체 캠핑장 관리 및 Super Admin)
+'
+' 캠핑장 데이터 관리 유틸리티
+' - localStorage 기반 캠핑장 데이터 CRUD
+' - Super Admin 인증 및 세션 관리
+' - 캠핑장 상태 관리 및 검색
+'
+' ============================================================================
+
+title Campground Service - Code Level
+
+' ========== lib/campground.ts ==========
+
+class CampgroundInfo {
+  + id: string
+  + name: string
+  + contactPhone: string
+  + contactEmail: string
+  + address: string
+  + description: string
+}
+
+note right of CampgroundInfo
+  단일 캠핑장 정보 타입
+  (현재 운영중인 캠핑장 정보)
+end note
+
+package "Campground Info Service" {
+  class CampgroundInfoService <<utility>> {
+    + {static} CAMPGROUND_STORAGE_KEY: string = 'odoichon_campground_info'
+    + {static} defaultCampgroundInfo: CampgroundInfo
+    --
+    + {static} getCampgroundInfo(): CampgroundInfo
+    + {static} saveCampgroundInfo(info: CampgroundInfo): void
+    + {static} updateCampgroundInfo(updates: Partial<CampgroundInfo>): CampgroundInfo
+  }
+}
+
+note bottom of CampgroundInfoService
+  **단일 캠핑장 정보 관리** (lib/campground.ts)
+
+  - getCampgroundInfo(): localStorage에서 캠핑장 정보 로드
+  - saveCampgroundInfo(): localStorage에 캠핑장 정보 저장
+  - updateCampgroundInfo(): 캠핑장 정보 부분 업데이트
+
+  **기본값**: 오도이촌 캠핑장 정보
+end note
+
+' ========== lib/campgrounds.ts ==========
+
+class Campground {
+  + id: string
+  + name: string
+  + ownerName: string
+  + ownerEmail: string
+  + ownerPhone: string
+  + contactPhone: string
+  + contactEmail: string
+  + address: string
+  + description: string
+  + status: 'active' | 'pending' | 'suspended' | 'terminated'
+  + subscriptionPlan: 'basic' | 'premium' | 'enterprise'
+  + createdAt: string
+  + lastActiveAt: string
+  + adminUrl: string
+  + kioskUrl: string
+}
+
+note right of Campground
+  전체 캠핑장 관리 타입
+  - status: 캠핑장 상태 (active, pending, suspended, terminated)
+  - subscriptionPlan: 구독 플랜
+  - adminUrl/kioskUrl: 각 캠핑장의 관리/키오스크 URL
+end note
+
+class SuperAdmin {
+  + id: string
+  + username: string
+  + email: string
+  + isAuthenticated: boolean
+}
+
+note right of SuperAdmin
+  슈퍼 어드민 정보 타입
+  - isAuthenticated: 현재 로그인 상태
+end note
+
+package "Campgrounds Management Service" {
+  class CampgroundsService <<utility>> {
+    + {static} CAMPGROUNDS_STORAGE_KEY: string = 'odoichon_campgrounds'
+    + {static} SUPER_ADMIN_KEY: string = 'odoichon_super_admin'
+    + {static} sampleCampgrounds: Campground[]
+    + {static} defaultSuperAdmin: SuperAdmin
+    --
+    ' Super Admin 관련
+    + {static} authenticateSuperAdmin(username: string, password: string): boolean
+    + {static} getSuperAdminStatus(): SuperAdmin
+    + {static} logoutSuperAdmin(): void
+    --
+    ' Campground CRUD
+    + {static} getAllCampgrounds(): Campground[]
+    + {static} saveCampgrounds(campgrounds: Campground[]): void
+    + {static} addCampground(data: Omit<Campground, ...>): Campground
+    + {static} updateCampground(id: string, updates: Partial<Campground>): boolean
+    + {static} updateCampgroundStatus(id: string, status: Campground['status']): boolean
+    + {static} deleteCampground(id: string): boolean
+    --
+    ' 검색 및 필터링
+    + {static} getCampgroundsByStatus(status: Campground['status']): Campground[]
+    + {static} searchCampgrounds(query: string): Campground[]
+  }
+}
+
+note bottom of CampgroundsService
+  **전체 캠핑장 관리** (lib/campgrounds.ts)
+
+  **Super Admin 인증**:
+  - authenticateSuperAdmin(): 하드코딩된 자격증명 검증 (admin/admin123)
+  - getSuperAdminStatus(): 현재 로그인 상태 확인
+  - logoutSuperAdmin(): 로그아웃 (localStorage 삭제)
+
+  **Campground CRUD**:
+  - getAllCampgrounds(): 모든 캠핑장 조회
+  - addCampground(): 새 캠핑장 추가 (Supabase UUID 또는 자동 생성)
+  - updateCampground(): 캠핑장 정보 업데이트
+  - updateCampgroundStatus(): 상태만 업데이트 (lastActiveAt 자동 갱신)
+  - deleteCampground(): 캠핑장 삭제
+
+  **검색 및 필터링**:
+  - getCampgroundsByStatus(): 상태별 필터링
+  - searchCampgrounds(): 이름, 소유자, 주소로 검색
+
+  **초기 데이터**: 오도이촌 캠핑장(active), 테스트 캠핑장(pending)
+end note
+
+' 외부 의존성
+database localStorage {
+  frame "Campground Info Storage" {
+    [odoichon_campground_info]
+  }
+  frame "Campgrounds Storage" {
+    [odoichon_campgrounds]
+  }
+  frame "Super Admin Storage" {
+    [odoichon_super_admin]
+  }
+}
+
+database Supabase {
+  frame "Remote Database" {
+    [campgrounds table]
+  }
+}
+
+' 관계
+CampgroundInfoService --> CampgroundInfo : uses
+CampgroundInfoService --> localStorage : read/write\n(odoichon_campground_info)
+
+CampgroundsService --> Campground : uses
+CampgroundsService --> SuperAdmin : uses
+CampgroundsService --> localStorage : read/write\n(odoichon_campgrounds,\nodoichon_super_admin)
+CampgroundsService ..> Supabase : sync\n(UUID as id)
+
+' 레이아웃
+CampgroundInfo -[hidden]down- CampgroundInfoService
+Campground -[hidden]down- CampgroundsService
+SuperAdmin -[hidden]down- CampgroundsService
+
+legend right
+  **Level 4: Code - Campground Services**
+
+  **파일**:
+  - lib/campground.ts (단일 캠핑장 정보)
+  - lib/campgrounds.ts (전체 관리 + Super Admin)
+
+  **타입**: Utility Functions (Functional Programming)
+  **저장소**: localStorage (Browser) + Supabase (Remote)
+
+  **특징**:
+  - 두 개의 독립적인 서비스 (단일 vs 전체)
+  - Super Admin 인증 통합
+  - Supabase UUID 동기화 지원
+  - 캠핑장 상태 관리 (4단계)
+  - 구독 플랜 관리 (3단계)
+
+  **사용 예시**:
+  ```typescript
+  // Super Admin 로그인
+  const success = authenticateSuperAdmin('admin', 'admin123')
+
+  // 모든 캠핑장 조회
+  const campgrounds = getAllCampgrounds()
+
+  // 새 캠핑장 추가 (Supabase UUID 포함)
+  const newCampground = addCampground({
+    id: 'uuid-from-supabase',
+    name: '새로운 캠핑장',
+    ownerName: '최사장',
+    ownerEmail: 'choi@example.com',
+    ownerPhone: '010-3333-4444',
+    contactPhone: '010-3333-4444',
+    contactEmail: 'contact@newcamp.com',
+    address: '제주도 제주시',
+    description: '바다와 함께하는 캠핑',
+    status: 'pending',
+    subscriptionPlan: 'basic'
+  })
+
+  // 상태 업데이트
+  updateCampgroundStatus('uuid-from-supabase', 'active')
+
+  // 검색
+  const results = searchCampgrounds('제주')
+  ```
+end legend
+
+@enduml

@@ -1,0 +1,449 @@
+@startuml Custom Hooks - Level 4 Code
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' CampHost - Custom Hooks (Level 4: Code)
+' ============================================================================
+'
+' 🔗 코드 경로: src/hooks/index.ts
+'
+' React Custom Hooks 컬렉션
+' - 캠핑장 관리 (useCampgrounds)
+' - 예약 관리 (useReservations)
+' - 사용자 인증 (useAuth)
+' - 폼 관리 (useForm)
+' - 필터링/검색 (useFilteredData)
+' - 로컬 스토리지 (useLocalStorage)
+'
+' ============================================================================
+
+title Custom Hooks - Code Level
+
+' ============================================================================
+' 1. useCampgrounds Hook
+' ============================================================================
+class useCampgrounds <<hook>> {
+  ' State
+  - campgrounds: Campground[]
+  - isLoading: boolean
+  - error: string | null
+
+  ' Methods
+  + loadCampgrounds(): void
+  + addCampground(data: Omit<Campground, 'id' | 'createdAt' | 'updatedAt'>): Campground
+  + updateCampground(id: string, data: Partial<Campground>): Campground | null
+  + deleteCampground(id: string): boolean
+  + refetch(): void
+
+  ' Return
+  --
+  Returns: {
+    campgrounds,
+    isLoading,
+    error,
+    addCampground,
+    updateCampground,
+    deleteCampground,
+    refetch
+  }
+}
+
+note right of useCampgrounds
+  **캠핑장 데이터 관리 훅**
+
+  - useState로 상태 관리
+  - useCallback로 메모이제이션
+  - useEffect로 초기 로드
+  - campgroundService와 연동
+
+  **에러 처리**:
+  - 각 작업 실패 시 error 상태 업데이트
+  - throw로 상위 컴포넌트에 전파
+end note
+
+' ============================================================================
+' 2. useReservations Hook
+' ============================================================================
+class useReservations <<hook>> {
+  ' State
+  - reservations: Reservation[]
+  - isLoading: boolean
+  - error: string | null
+
+  ' Methods
+  + loadReservations(): void
+  + addReservation(data: Omit<Reservation, 'id' | 'createdAt' | 'updatedAt'>): Reservation
+  + updateReservation(id: string, data: Partial<Reservation>): Reservation | null
+  + deleteReservation(id: string): boolean
+  + refetch(): void
+
+  ' Return
+  --
+  Returns: {
+    reservations,
+    isLoading,
+    error,
+    addReservation,
+    updateReservation,
+    deleteReservation,
+    refetch
+  }
+}
+
+note right of useReservations
+  **예약 데이터 관리 훅**
+
+  - useState로 상태 관리
+  - useCallback로 메모이제이션
+  - useEffect로 초기 로드
+  - reservationService와 연동
+
+  **에러 처리**:
+  - 각 작업 실패 시 error 상태 업데이트
+  - throw로 상위 컴포넌트에 전파
+end note
+
+' ============================================================================
+' 3. useAuth Hook
+' ============================================================================
+class useAuth <<hook>> {
+  ' State
+  - user: User | null
+  - isLoading: boolean
+
+  ' Methods
+  + loadUser(): void
+  + login(username: string, password: string): boolean
+  + logout(): void
+
+  ' Return
+  --
+  Returns: {
+    user,
+    isLoading,
+    login,
+    logout,
+    isAuthenticated: boolean
+  }
+}
+
+note right of useAuth
+  **사용자 인증 관리 훅**
+
+  - useState로 상태 관리
+  - useCallback로 메모이제이션
+  - useEffect로 초기 사용자 로드
+  - userService와 연동
+
+  **특징**:
+  - isAuthenticated: computed 값 (!!user)
+  - Super Admin 인증 지원
+end note
+
+' ============================================================================
+' 4. useForm Hook (Generic)
+' ============================================================================
+class useForm <<hook>> {
+  ' Parameters
+  + <T extends Record<string, any>>
+  + initialData: T
+  + validationRules?: Partial<Record<keyof T, (value: any) => boolean>>
+
+  ' State
+  - formState: FormState<T>
+    - data: T
+    - errors: Partial<Record<keyof T, string>>
+    - isSubmitting: boolean
+    - isValid: boolean
+
+  ' Methods
+  + updateField(field: keyof T, value: any): void
+  + validateForm(): boolean
+  + resetForm(): void
+  + setSubmitting(isSubmitting: boolean): void
+
+  ' Return
+  --
+  Returns: {
+    formState,
+    updateField,
+    validateForm,
+    resetForm,
+    setSubmitting
+  }
+}
+
+note right of useForm
+  **제네릭 폼 관리 훅**
+
+  - Generic 타입 <T>로 유연성 제공
+  - useState로 폼 상태 관리
+  - useCallback로 메모이제이션
+  - ValidationUtils와 연동
+
+  **기능**:
+  - 필드별 에러 관리
+  - 실시간 유효성 검증
+  - 제출 상태 관리
+  - 폼 초기화
+
+  **사용 예시**:
+  ```typescript
+  const { formState, updateField, validateForm } =
+    useForm({ name: '', email: '' }, {
+      name: (v) => v.length > 0,
+      email: (v) => /\S+@\S+/.test(v)
+    })
+  ```
+end note
+
+' ============================================================================
+' 5. useFilteredData Hook (Generic)
+' ============================================================================
+class useFilteredData <<hook>> {
+  ' Parameters
+  + <T>
+  + data: T[]
+  + filterFn: (item: T, filters: FilterOptions) => boolean
+
+  ' State
+  - filters: FilterOptions
+
+  ' Computed
+  - filteredData: T[]
+
+  ' Methods
+  + updateFilter(key: keyof FilterOptions, value: any): void
+  + clearFilters(): void
+
+  ' Return
+  --
+  Returns: {
+    filteredData,
+    filters,
+    updateFilter,
+    clearFilters
+  }
+}
+
+note right of useFilteredData
+  **필터링 및 검색 관리 훅**
+
+  - Generic 타입 <T>로 유연성 제공
+  - useState로 필터 상태 관리
+  - useCallback로 메모이제이션
+  - 커스텀 filterFn으로 필터링 로직 주입
+
+  **특징**:
+  - 클라이언트 사이드 필터링
+  - computed 값으로 filteredData 제공
+  - 필터 초기화 지원
+
+  **사용 예시**:
+  ```typescript
+  const { filteredData, updateFilter } =
+    useFilteredData(
+      campgrounds,
+      (item, filters) =>
+        !filters.search ||
+        item.name.includes(filters.search)
+    )
+  ```
+end note
+
+' ============================================================================
+' 6. useLocalStorage Hook (Generic)
+' ============================================================================
+class useLocalStorage <<hook>> {
+  ' Parameters
+  + <T>
+  + key: string
+  + initialValue: T
+
+  ' State
+  - storedValue: T
+
+  ' Methods
+  + setValue(value: T | ((val: T) => T)): void
+
+  ' Return
+  --
+  Returns: [storedValue, setValue]
+}
+
+note right of useLocalStorage
+  **로컬 스토리지 동기화 훅**
+
+  - Generic 타입 <T>로 유연성 제공
+  - useState로 상태 관리 (lazy initialization)
+  - useCallback로 메모이제이션
+  - localStorage와 자동 동기화
+
+  **특징**:
+  - SSR 대응 (typeof window === 'undefined')
+  - JSON 직렬화/역직렬화
+  - 함수형 업데이트 지원
+  - 에러 처리 (try-catch)
+
+  **사용 예시**:
+  ```typescript
+  const [user, setUser] =
+    useLocalStorage<User | null>('user', null)
+  ```
+end note
+
+' ============================================================================
+' 외부 의존성
+' ============================================================================
+package "React" {
+  class ReactHooks <<library>> {
+    + useState()
+    + useEffect()
+    + useCallback()
+  }
+}
+
+package "Services" {
+  class CampgroundService {
+    + getAll()
+    + create()
+    + update()
+    + delete()
+  }
+
+  class ReservationService {
+    + getAll()
+    + create()
+    + update()
+    + delete()
+  }
+
+  class UserService {
+    + getCurrentUser()
+    + authenticateSuperAdmin()
+    + logout()
+  }
+}
+
+package "Utils" {
+  class ValidationUtils {
+    + validateForm()
+  }
+}
+
+database localStorage {
+  frame "Browser Storage" {
+    [key-value pairs]
+  }
+}
+
+' ============================================================================
+' 타입 의존성
+' ============================================================================
+package "Types" {
+  class Campground <<type>>
+  class Reservation <<type>>
+  class User <<type>>
+  class FilterOptions <<type>>
+  class FormState <<type>>
+}
+
+' ============================================================================
+' 관계
+' ============================================================================
+
+' Hook → React Dependencies
+useCampgrounds --> ReactHooks : uses
+useReservations --> ReactHooks : uses
+useAuth --> ReactHooks : uses
+useForm --> ReactHooks : uses
+useFilteredData --> ReactHooks : uses
+useLocalStorage --> ReactHooks : uses
+
+' Hook → Service Dependencies
+useCampgrounds --> CampgroundService : uses
+useReservations --> ReservationService : uses
+useAuth --> UserService : uses
+useForm --> ValidationUtils : uses
+
+' Hook → Storage Dependencies
+useLocalStorage --> localStorage : read/write
+
+' Hook → Type Dependencies
+useCampgrounds --> Campground : returns
+useReservations --> Reservation : returns
+useAuth --> User : returns
+useForm --> FormState : manages
+useFilteredData --> FilterOptions : uses
+
+' ============================================================================
+' 레이아웃
+' ============================================================================
+ReactHooks -[hidden]down- useCampgrounds
+useCampgrounds -[hidden]down- useReservations
+useReservations -[hidden]down- useAuth
+useAuth -[hidden]down- useForm
+useForm -[hidden]down- useFilteredData
+useFilteredData -[hidden]down- useLocalStorage
+
+CampgroundService -[hidden]down- ReservationService
+ReservationService -[hidden]down- UserService
+UserService -[hidden]down- ValidationUtils
+
+legend right
+  **Level 4: Code - Custom Hooks**
+
+  **파일**: src/hooks/index.ts
+  **패턴**: React Custom Hooks
+  **의존성**: React, Services, Utils
+
+  **훅 분류**:
+
+  **1. 데이터 관리 훅**:
+  - useCampgrounds: 캠핑장 CRUD
+  - useReservations: 예약 CRUD
+  - useAuth: 사용자 인증
+
+  **2. 유틸리티 훅**:
+  - useForm<T>: 제네릭 폼 관리
+  - useFilteredData<T>: 제네릭 필터링/검색
+  - useLocalStorage<T>: 제네릭 로컬 스토리지 동기화
+
+  **공통 패턴**:
+  - useState: 상태 관리
+  - useEffect: 사이드 이펙트 (초기 로드)
+  - useCallback: 메모이제이션 (성능 최적화)
+  - 에러 처리: try-catch + error 상태
+
+  **제네릭 훅의 이점**:
+  - 타입 안전성
+  - 재사용성
+  - 유연성
+
+  **사용 예시**:
+  ```typescript
+  // 컴포넌트에서 사용
+  function CampgroundList() {
+    const {
+      campgrounds,
+      isLoading,
+      error,
+      addCampground
+    } = useCampgrounds()
+
+    const {
+      filteredData,
+      updateFilter
+    } = useFilteredData(
+      campgrounds,
+      (item, filters) =>
+        !filters.search ||
+        item.name.includes(filters.search)
+    )
+
+    // ... render
+  }
+  ```
+end legend
+
+@enduml
