@@ -603,28 +603,36 @@ export default function SuperAdminDashboard() {
                   </div>
                   <div className="integration-actions">
                     <div className="quick-actions">
-                      <Button 
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          // 어드민 페이지를 새 탭에서 열고 자동 로그인
-                          const adminUrl = `${campground.adminUrl}&autoLogin=true`
-                          window.open(adminUrl, '_blank')
-                        }}
-                      >
-                        🚀 어드민 자동 로그인
-                      </Button>
-                      <Button 
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          // 키오스크 페이지를 새 탭에서 열고 테스트 모드
-                          const kioskUrl = `${campground.kioskUrl}&testMode=true`
-                          window.open(kioskUrl, '_blank')
-                        }}
-                      >
-                        🧪 키오스크 테스트
-                      </Button>
+                      {campground.status !== 'terminated' ? (
+                        <>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              // 어드민 페이지를 새 탭에서 열고 자동 로그인
+                              const adminUrl = `${campground.adminUrl}&autoLogin=true`
+                              window.open(adminUrl, '_blank')
+                            }}
+                          >
+                            🚀 어드민 자동 로그인
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              // 키오스크 페이지를 새 탭에서 열고 테스트 모드
+                              const kioskUrl = `${campground.kioskUrl}&testMode=true`
+                              window.open(kioskUrl, '_blank')
+                            }}
+                          >
+                            🧪 키오스크 테스트
+                          </Button>
+                        </>
+                      ) : (
+                        <div style={{ padding: '8px', color: '#ef4444', fontSize: '14px' }}>
+                          삭제된 캠핑장입니다
+                        </div>
+                      )}
                     </div>
                            {/* 실제 per-campground 집계가 필요하면 API 추가 후 연결합니다. */}
                   </div>

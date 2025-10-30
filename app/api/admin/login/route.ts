@@ -18,11 +18,20 @@ export async function POST(request: NextRequest) {
         // 정확히 일치하는 이름으로만 조회
         const rows = await supabaseRest.select<any[]>(
           'campgrounds',
-          `?name=eq.${encodeURIComponent(campgroundName)}&select=id,name,admin_password`
+          `?name=eq.${encodeURIComponent(campgroundName)}&select=id,name,admin_password,status`
         )
         const camp = rows && rows[0]
 
         if (camp) {
+          // 삭제된 캠핑장 로그인 차단
+          if (camp.status === 'terminated') {
+            console.log(`[Login API] Campground ${camp.name} is terminated`)
+            return NextResponse.json(
+              { error: '삭제된 캠핑장입니다. 로그인할 수 없습니다.' },
+              { status: 403 }
+            )
+          }
+
           const storedPassword = camp.admin_password || '0000' // 기본값
           console.log(`[Login API] Found campground: ${camp.name}, stored password: ${storedPassword}, input password: ${password}`)
           if (storedPassword === password) {
