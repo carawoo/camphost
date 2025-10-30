@@ -7,7 +7,7 @@ priority: medium
 created: 2025-10-30T10:06:55Z
 updated: 2025-10-30T10:11:33Z
 branch: "feature/EPIC-94f19e2"
-pr_url: ""
+pr_url: "https://github.com/carawoo/camphost/pull/1"
 ---
 
 # Epic: CampHost C4 Model 아키텍처 문서화
