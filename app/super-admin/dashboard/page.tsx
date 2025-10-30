@@ -123,6 +123,7 @@ export default function SuperAdminDashboard() {
             description: r.description || '',
             status: r.status || 'pending',
             subscriptionPlan: r.subscription_plan || 'basic',
+            lastActiveAt: r.updated_at || new Date().toISOString(),
             adminUrl: r.admin_url || '',
             kioskUrl: r.kiosk_url || '',
             createdAt: r.created_at || new Date().toISOString(),
