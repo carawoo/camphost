@@ -48,6 +48,11 @@ export interface Reservation extends BaseEntity {
   status: ReservationStatus
   actualCheckinTime?: string
   actualCheckoutTime?: string
+  /**
+   * 선택한 숯불 예약 시간대 (선택 사항)
+   * @example "오후 7시"
+   */
+  charcoalReservationTime?: string
 }
 
 export type ReservationStatus = 'confirmed' | 'checked-in' | 'checked-out' | 'cancelled'
