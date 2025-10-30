@@ -1,0 +1,162 @@
+@startuml CampHost API Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' Level 3: API Component Diagram
+' ============================================================================
+'
+' REST API Container 내부의 주요 API 엔드포인트를 컴포넌트로 표현합니다.
+' - Admin Login API (관리자 인증)
+' - Checkin Notification API (체크인 알림)
+' - Email APIs (비밀번호 재설정, 회원정보 문의)
+' - Dev Tools API (개발 유틸리티)
+'
+' 🔗 이전 레벨: lv2-containers/overview.puml
+' 🔗 다음 레벨: lv4-code/**/*.puml
+' ============================================================================
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram for CampHost REST API
+
+' ============================================================================
+' Actors (사용자)
+' ============================================================================
+
+Person(campgroundAdmin, "Campground Admin", "캠핑장 사장님")
+Person(camper, "Camper", "캠핑 고객")
+Person(developer, "Developer", "개발자")
+
+' ============================================================================
+' System Boundary
+' ============================================================================
+
+System_Boundary(camphost, "CampHost") {
+
+    ' ------------------------------------------------------------------------
+    ' Container: REST API
+    ' ------------------------------------------------------------------------
+    Container_Boundary(api, "REST API") {
+
+        ' --------------------------------------------------------------------
+        ' Admin Login API
+        ' --------------------------------------------------------------------
+        Component(adminLoginAPI, "Admin Login API", "Next.js API Route", "관리자 로그인 인증\n\n**엔드포인트:**\nPOST /api/admin/login\n\n**기능:**\n- Supabase 캠핑장 조회\n- 비밀번호 검증\n- 삭제된 캠핑장 차단\n- 폴백: 하드코딩 credential\n\n🔗 app/api/admin/login/route.ts")
+
+        ' --------------------------------------------------------------------
+        ' Checkin Notification API
+        ' --------------------------------------------------------------------
+        Component(checkinNotificationAPI, "Checkin Notification API", "Next.js API Route", "체크인 알림 이메일 발송\n\n**엔드포인트:**\nPOST /api/notify/checkin\n\n**기능:**\n- 체크인 정보 수신\n- Resend 이메일 발송\n- 캠핑장 사장님 알림\n\n**환경 변수:**\n- RESEND_API_KEY\n- NOTIFY_EMAIL\n\n🔗 app/api/notify/checkin/route.ts")
+
+        ' --------------------------------------------------------------------
+        ' Reset Password Email API
+        ' --------------------------------------------------------------------
+        Component(resetPasswordEmailAPI, "Reset Password Email API", "Next.js API Route", "비밀번호 재설정 요청 이메일\n\n**엔드포인트:**\nPOST /api/admin/reset-email\n\n**기능:**\n- 재설정 요청 정보 수신\n- HTML 템플릿 이메일 발송\n- 관리자에게 알림\n\n🔗 app/api/admin/reset-email/route.ts")
+
+        ' --------------------------------------------------------------------
+        ' Help Email API
+        ' --------------------------------------------------------------------
+        Component(helpEmailAPI, "Help Email API", "Next.js API Route", "회원정보 문의 이메일\n\n**엔드포인트:**\nPOST /api/admin/help-email\n\n**기능:**\n- 문의 정보 수신\n- HTML 템플릿 이메일 발송\n- 관리자에게 알림\n\n🔗 app/api/admin/help-email/route.ts")
+
+        ' --------------------------------------------------------------------
+        ' Dev Tools API
+        ' --------------------------------------------------------------------
+        Component(devToolsAPI, "Dev Tools API", "Next.js API Route", "개발 유틸리티 API\n\n**엔드포인트:**\nGET /api/dev/seed-reservation\nGET /api/dev/cascade-delete\n\n**기능:**\n- 테스트 데이터 생성\n- 캐스케이드 삭제\n- Supabase CRUD\n\n🔗 app/api/dev/seed-reservation/route.ts\n🔗 app/api/dev/cascade-delete/route.ts")
+
+    }
+
+}
+
+' ============================================================================
+' External Systems (외부 시스템)
+' ============================================================================
+
+System_Ext(supabase, "Supabase", "PostgreSQL 데이터베이스\n\n**테이블:**\n- campgrounds (캠핑장)\n- reservations (예약)\n- inquiries (문의)")
+
+System_Ext(resend, "Resend", "이메일 발송 서비스\n\n**이메일 종류:**\n- 체크인 알림\n- 비밀번호 재설정\n- 회원정보 문의")
+
+' ============================================================================
+' Relationships (관계)
+' ============================================================================
+
+' Users → API Components
+Rel(campgroundAdmin, adminLoginAPI, "로그인 요청", "POST /api/admin/login\nJSON body")
+Rel(camper, checkinNotificationAPI, "체크인 알림 전송", "POST /api/notify/checkin\nJSON body")
+Rel(campgroundAdmin, resetPasswordEmailAPI, "비밀번호 재설정 요청", "POST /api/admin/reset-email\nJSON body")
+Rel(campgroundAdmin, helpEmailAPI, "문의 접수", "POST /api/admin/help-email\nJSON body")
+Rel(developer, devToolsAPI, "개발 도구 사용", "GET /api/dev/*\nQuery params")
+
+' API Components → External Systems
+Rel(adminLoginAPI, supabase, "캠핑장 조회 및 인증", "REST API\nSELECT campgrounds")
+Rel(devToolsAPI, supabase, "CRUD 작업", "REST API\nINSERT, DELETE")
+
+Rel(checkinNotificationAPI, resend, "체크인 알림 발송", "POST /emails\nPlain text")
+Rel(resetPasswordEmailAPI, resend, "재설정 이메일 발송", "POST /emails\nHTML template")
+Rel(helpEmailAPI, resend, "문의 이메일 발송", "POST /emails\nHTML template")
+
+' ============================================================================
+' Notes
+' ============================================================================
+
+note right of adminLoginAPI
+  **인증 프로세스:**
+  1. Request body 파싱
+  2. Supabase 캠핑장 조회
+  3. 상태 확인 (terminated 차단)
+  4. 비밀번호 검증
+  5. 토큰 생성 및 반환
+
+  **폴백 로직:**
+  - Supabase 실패 시 하드코딩된
+    credential 목록 사용
+  - '테스트캠핑장', '오도이촌' 등
+end note
+
+note right of checkinNotificationAPI
+  **이메일 내용:**
+  - 캠핑장명, 고객명, 연락처
+  - 객실 번호, 체크인/아웃 날짜
+  - 인원 수, 결제 금액
+  - 캠핑장 사장님 연락처
+
+  **수신자:**
+  - NOTIFY_EMAIL 환경 변수
+  - 기본값: odoichon@odoichon.com
+end note
+
+note bottom of devToolsAPI
+  **개발 전용 API** (Production에서 비활성화 권장)
+
+  **seed-reservation:**
+  - 테스트 캠핑장 생성 (없으면)
+  - 테스트 예약 데이터 생성
+  - Kiosk URL, Admin URL 반환
+
+  **cascade-delete:**
+  - 캠핑장 ID로 삭제
+  - 연관된 예약, 문의 모두 삭제
+  - Best-effort (에러 무시)
+end note
+
+' ============================================================================
+' 동기화 체크리스트
+' ============================================================================
+'
+' □ 새로운 API 엔드포인트 추가 시
+'   - Component(...) 추가
+'   - Rel(...) 관계 정의
+'   - 🔗 코드 경로 주석 추가
+'
+' □ API 기능 변경 시
+'   - Component 설명 업데이트
+'   - Rel 관계 수정 (필요시)
+'
+' □ 외부 서비스 연동 변경 시
+'   - System_Ext(...) 확인
+'   - Rel(API, 외부서비스, ...) 수정
+'
+' □ 환경 변수 추가/변경 시
+'   - Component 설명에 환경 변수 명시
+'
+
+@enduml

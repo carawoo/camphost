@@ -101,35 +101,95 @@ end legend
 ' 📄 파일들:
 ' - lv3-components/webapp.puml: Web Application 내부 컴포넌트
 ' - lv3-components/api.puml: API 내부 컴포넌트
+' - lv3-components/services.puml: Services Layer (Legacy + Modern)
 '
 ' Web Application 컴포넌트:
 ' - Super Admin UI (app/super-admin/)
+'   - Dashboard, Campgrounds List, Campground Detail
 ' - Admin Dashboard UI (app/admin/)
+'   - Statistics, Reservation Management, Settings
 ' - Kiosk UI (app/kiosk/)
+'   - Checkin/Checkout Flow
 ' - Landing Page (app/page.tsx)
 ' - Custom Hooks (src/hooks/)
+'   - useCampgrounds, useReservations, useAuth
+'   - useForm, useFilteredData, useLocalStorage
 ' - Service Layer (lib/, src/services/)
+'   - Reservation Service, Campground Services
+'   - User Service, Supabase REST Helper
 ' - Utilities (src/utils/)
+'   - StorageManager, DateUtils, ValidationUtils
+'   - StringUtils, UrlUtils, ErrorHandler
 '
 ' API 컴포넌트:
 ' - Admin Login API (/api/admin/login)
 ' - Checkin Notification API (/api/notify/checkin)
 ' - Dev Tools API (/api/dev/*)
 '
+' Services Layer:
+' - Legacy Services (lib/): 함수형 서비스
+'   - reservations.ts, campground.ts, campgrounds.ts
+' - Modern Services (src/services/): 클래스 기반 서비스
+'   - CampgroundService, ReservationService, UserService
+' - Utilities (src/utils/): 공용 헬퍼
+'   - StorageManager, DateUtils, ValidationUtils 등
+'
 ' 🔗 다음 레벨: lv4-code/**/*.puml
 
 ' ============================================================================
-' Level 4: Code (필요시 작성)
+' Level 4: Code
 ' ============================================================================
 '
-' 📄 예상 파일들:
-' - lv4-code/services/campground-service.puml
-' - lv4-code/services/reservation-service.puml
-' - lv4-code/hooks/use-campgrounds.puml
+' 📄 파일들:
 '
-' 각 서비스와 훅의 클래스 다이어그램, 메서드, 속성을 표현합니다.
+' **Services** (lv4-code/services/):
+' - reservation-service.puml: 예약 데이터 관리
+'   - lib/reservations.ts
+'   - getReservations(), addReservation(), updateReservationStatus()
+'   - findReservation(), deleteReservation()
+'   - localStorage 기반, 초기 샘플 데이터 제공
 '
-' ⚠️ 현재는 Level 3까지만 작성하며, 필요시 추가합니다.
+' - campground-service.puml: 캠핑장 데이터 관리
+'   - lib/campground.ts (단일 캠핑장 정보)
+'   - lib/campgrounds.ts (전체 관리 + Super Admin)
+'   - getCampgroundInfo(), getAllCampgrounds(), addCampground()
+'   - updateCampgroundStatus(), searchCampgrounds()
+'   - authenticateSuperAdmin() (admin/admin123)
+'   - localStorage + Supabase UUID 동기화
+'
+' - notification-service.puml: 체크인 알림 이메일 발송
+'   - app/api/notify/checkin/route.ts
+'   - POST /api/notify/checkin
+'   - Resend 이메일 서비스 통합
+'   - 환경 변수: RESEND_API_KEY, NOTIFY_EMAIL
+'
+' **Hooks** (lv4-code/hooks/):
+' - custom-hooks.puml: React Custom Hooks 컬렉션
+'   - src/hooks/index.ts
+'   - useCampgrounds: 캠핑장 CRUD (useState, useEffect, useCallback)
+'   - useReservations: 예약 CRUD
+'   - useAuth: 사용자 인증 및 세션 관리
+'   - useForm<T>: 제네릭 폼 관리 (유효성 검사, 에러 관리)
+'   - useFilteredData<T>: 제네릭 필터링/검색
+'   - useLocalStorage<T>: localStorage 동기화 (SSR 대응)
+'
+' **Types** (lv4-code/types/):
+' - domain-models.puml: 도메인 모델 타입 정의
+'   - src/types/index.ts
+'   - BaseEntity: 공통 엔티티 (id, createdAt, updatedAt)
+'   - User: 사용자 (role: super_admin | campground_owner | guest)
+'   - Campground: 캠핑장 (status: active | pending | suspended | terminated)
+'   - Reservation: 예약 (status: confirmed | checked-in | checked-out | cancelled)
+'   - ApiResponse<T>, PaginatedResponse<T>: API 응답 타입
+'   - FormState<T>: 폼 상태 관리
+'   - FilterOptions: 필터/검색 옵션
+'   - 컴포넌트 Props: BaseComponentProps, ModalProps, TableColumn<T>
+'   - 상태 관리: AppState, Action<T>
+'   - 설정: AppConfig, StorageKeys, DefaultPagination
+'
+' 각 서비스와 훅의 클래스 다이어그램, 메서드, 속성, 사용 예시를 표현합니다.
+'
+' 🔗 코드 경로: 각 다이어그램 상단에 명시
 
 ' ============================================================================
 ' 다이어그램 동기화 체크리스트
@@ -140,30 +200,128 @@ end legend
 ' □ Level 1 (lv1-system-context/system.puml)
 '   - 새로운 외부 시스템 추가 시: System_Ext 추가
 '   - 사용자 역할 변경 시: Person 수정
+'   - 관계 변경 시: Rel 수정
 '
 ' □ Level 2 (lv2-containers/overview.puml)
 '   - 새로운 실행 단위 추가 시: Container 추가
 '   - 컨테이너 간 관계 변경 시: Rel 수정
+'   - 외부 시스템 통합 변경 시: System_Ext 및 Rel 수정
 '
 ' □ Level 3 (lv3-components/*.puml)
-'   - 새로운 UI 페이지 추가 시: Component 추가
-'   - 서비스/훅 추가 시: Component 및 Rel 수정
+'   - webapp.puml:
+'     - 새로운 UI 페이지 추가 시: Component 추가
+'     - 훅 추가/변경 시: Component 및 Rel 수정
+'   - api.puml:
+'     - API 엔드포인트 추가 시: Component 추가
+'     - API 로직 변경 시: Component 설명 업데이트
+'   - services.puml:
+'     - 서비스 추가/변경 시: Component 및 Rel 수정
+'     - 유틸리티 추가 시: Component 추가
 '
 ' □ Level 4 (lv4-code/**/*.puml)
-'   - 클래스/인터페이스 추가 시: 해당 다이어그램 업데이트
+'   - services/*.puml:
+'     - 함수/메서드 추가 시: 클래스 다이어그램 업데이트
+'     - 타입 변경 시: class/interface 정의 수정
+'   - hooks/*.puml:
+'     - 훅 추가/변경 시: 훅 정의 및 의존성 업데이트
+'     - 훅 파라미터 변경 시: Parameters 섹션 수정
+'   - types/*.puml:
+'     - 타입 정의 추가/변경 시: interface/enum 업데이트
+'     - 타입 관계 변경 시: 상속/포함 관계 수정
 
 ' ============================================================================
 ' 렌더링 방법
 ' ============================================================================
 '
 ' 1. PlantUML CLI:
+'    # 단일 파일 렌더링
 '    plantuml docs/c4-model/lv1-system-context/system.puml
 '
-' 2. VS Code 확장:
-'    - PlantUML 확장 설치
-'    - Alt+D로 미리보기
+'    # 전체 디렉토리 렌더링
+'    plantuml docs/c4-model/**/*.puml
 '
-' 3. Online:
-'    - http://www.plantuml.com/plantuml/uml/
+'    # PNG 출력 (기본)
+'    plantuml -tpng docs/c4-model/lv1-system-context/system.puml
+'
+'    # SVG 출력 (권장, 확대/축소 가능)
+'    plantuml -tsvg docs/c4-model/**/*.puml
+'
+' 2. VS Code 확장:
+'    - PlantUML 확장 설치: https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml
+'    - Alt+D (또는 Cmd+D): 미리보기 열기
+'    - Ctrl+Shift+P → "PlantUML: Export Current Diagram": PNG/SVG 내보내기
+'
+' 3. Online (인터넷 연결 필요):
+'    - PlantUML Online Editor: http://www.plantuml.com/plantuml/uml/
+'    - C4-PlantUML 예제: https://github.com/plantuml-stdlib/C4-PlantUML
+'
+' 4. JetBrains IDE (IntelliJ, WebStorm):
+'    - PlantUML Integration 플러그인 설치
+'    - .puml 파일 열기 → 우측 미리보기 자동 표시
+'
+' ============================================================================
+' 사용 가이드 (LLM Agent)
+' ============================================================================
+'
+' Epic 분석 시 탐색 순서:
+'
+' 1. 00-INDEX.puml (현재 파일) 읽기
+'    - 전체 시스템 구조 파악
+'    - 각 레벨의 파일 목록 확인
+'
+' 2. Level 1 → Level 2 → Level 3 → Level 4 순서로 탐색
+'    - Epic 요구사항과 관련된 레벨 확인
+'    - 각 레벨의 .puml 파일 읽기
+'
+' 3. 영향 범위 파악
+'    - Epic이 어느 레벨까지 영향을 미치는지 확인
+'    - 변경이 필요한 컴포넌트/클래스 식별
+'
+' 4. 사용자에게 분석 결과 제시 (필수)
+'    - 영향 받는 레벨 및 컴포넌트 설명
+'    - 예상 변경사항 명시
+'    - Task 분해 전에 사용자 피드백 대기
+'
+' 5. Task 생성
+'    - 각 다이어그램의 "🔗 코드 경로" 참조
+'    - Task 설명에 수정할 파일 명시
+'
+' 6. Task 완료 후 다이어그램 동기화
+'    - Level 4 → Level 3 → Level 2 → Level 1 순서로 체크
+'    - "동기화 체크리스트" 완료
+'
+' ============================================================================
+' 다이어그램 관리 가이드
+' ============================================================================
+'
+' 새 다이어그램 추가 시:
+'
+' 1. 적절한 레벨 디렉토리에 .puml 파일 생성
+'    - Level 1: lv1-system-context/
+'    - Level 2: lv2-containers/
+'    - Level 3: lv3-components/
+'    - Level 4: lv4-code/{category}/
+'
+' 2. 파일 헤더 작성 (필수):
+'    - C4-PlantUML include 선언
+'    - 🔗 코드 경로 명시
+'    - 다이어그램 설명 (한글)
+'
+' 3. 00-INDEX.puml 업데이트:
+'    - 해당 레벨 섹션에 파일 추가
+'    - 주요 내용 요약
+'
+' 4. 동기화 체크리스트 업데이트:
+'    - 새 다이어그램 관련 체크 항목 추가
+'
+' 다이어그램 삭제 시:
+'
+' 1. 파일 삭제 전에 의존성 확인
+'    - 다른 다이어그램에서 참조하는지 확인
+'
+' 2. 00-INDEX.puml에서 제거
+'    - 해당 레벨 섹션에서 파일 정보 삭제
+'
+' 3. 관련 체크리스트 항목 제거
 
 @enduml

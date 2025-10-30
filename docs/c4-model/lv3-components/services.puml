@@ -1,0 +1,248 @@
+@startuml CampHost Services Layer - Level 3 Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' CampHost - Services Layer (Level 3: Components)
+' ============================================================================
+'
+' 🔗 코드 경로:
+'   - lib/ (레거시 함수형 서비스)
+'   - src/services/ (신규 클래스 기반 서비스)
+'   - src/utils/ (유틸리티 클래스)
+'
+' 서비스 레이어 아키텍처
+' - 데이터 관리 및 비즈니스 로직 처리
+' - localStorage 및 Supabase 통합
+' - 유틸리티 및 헬퍼 함수 제공
+'
+' ============================================================================
+
+LAYOUT_WITH_LEGEND()
+
+title Services Layer - Component Diagram
+
+' ============================================================================
+' System Boundary
+' ============================================================================
+
+System_Boundary(services, "Services Layer") {
+
+    ' ------------------------------------------------------------------------
+    ' Legacy Services (lib/)
+    ' ------------------------------------------------------------------------
+    Container_Boundary(legacy_services, "Legacy Services (Functional)") {
+
+        Component(reservation_service, "Reservation Service", "lib/reservations.ts", "예약 데이터 관리\n\n**주요 기능:**\n- getReservations()\n- addReservation()\n- updateReservationStatus()\n- findReservation()\n\n**저장소:** localStorage\n**초기 데이터:** 김철수, 이영희 예약")
+
+        Component(campground_info_service, "Campground Info Service", "lib/campground.ts", "단일 캠핑장 정보 관리\n\n**주요 기능:**\n- getCampgroundInfo()\n- saveCampgroundInfo()\n- updateCampgroundInfo()\n\n**저장소:** localStorage\n**기본값:** 오도이촌 캠핑장")
+
+        Component(campgrounds_management, "Campgrounds Management", "lib/campgrounds.ts", "전체 캠핑장 및 Super Admin 관리\n\n**주요 기능:**\n- authenticateSuperAdmin()\n- getAllCampgrounds()\n- addCampground()\n- updateCampgroundStatus()\n- searchCampgrounds()\n\n**저장소:** localStorage\n**인증:** admin/admin123")
+    }
+
+    ' ------------------------------------------------------------------------
+    ' Modern Services (src/services/)
+    ' ------------------------------------------------------------------------
+    Container_Boundary(modern_services, "Modern Services (Class-Based)") {
+
+        Component(campground_service_class, "CampgroundService", "src/services/index.ts", "캠핑장 서비스 클래스\n\n**구현:** BaseService<Campground>\n**주요 메서드:**\n- getAll() / getById()\n- create() / update() / delete()\n- getByStatus() / search()\n\n**의존성:** StorageManager\n**특징:** CRUD + 검색 + 상태 관리")
+
+        Component(reservation_service_class, "ReservationService", "src/services/index.ts", "예약 서비스 클래스\n\n**구현:** BaseService<Reservation>\n**주요 메서드:**\n- getAll() / getById()\n- create() / update() / delete()\n- findByGuest()\n- getByCampground()\n\n**의존성:** StorageManager\n**특징:** CRUD + 고객 검색")
+
+        Component(user_service, "UserService", "src/services/index.ts", "사용자 세션 관리\n\n**주요 메서드:**\n- getCurrentUser()\n- setCurrentUser()\n- logout()\n- authenticateSuperAdmin()\n\n**의존성:** StorageManager\n**특징:** 세션 관리 + Super Admin 인증")
+
+        Component(supabase_rest, "Supabase REST Helper", "src/services/supabaseRest.ts", "Supabase REST API 헬퍼\n\n**주요 메서드:**\n- select() / insert() / upsert()\n- update() / delete()\n\n**통합:** Supabase REST API\n**특징:** supabase-js 없이 경량 구현")
+    }
+
+    ' ------------------------------------------------------------------------
+    ' Utilities (src/utils/)
+    ' ------------------------------------------------------------------------
+    Container_Boundary(utilities, "Utilities") {
+
+        Component(storage_manager, "StorageManager", "src/utils/index.ts", "localStorage 관리 유틸리티\n\n**주요 메서드:**\n- get<T>() / set<T>()\n- remove() / clear()\n- isClient()\n\n**특징:** SSR 대응, 에러 핸들링")
+
+        Component(date_utils, "DateUtils", "src/utils/index.ts", "날짜 유틸리티\n\n**주요 메서드:**\n- formatDate() / getToday()\n- addDays() / isToday()\n\n**특징:** ISO 포맷, 한국어 포맷")
+
+        Component(validation_utils, "ValidationUtils", "src/utils/index.ts", "폼 유효성 검사\n\n**주요 메서드:**\n- validateEmail() / validatePhone()\n- validateRequired()\n- validateForm()\n\n**특징:** 타입 안전성")
+
+        Component(string_utils, "StringUtils", "src/utils/index.ts", "문자열 유틸리티\n\n**주요 메서드:**\n- capitalize() / truncate()\n- slugify() / formatPhone()\n\n**특징:** 한글 지원")
+
+        Component(url_utils, "UrlUtils", "src/utils/index.ts", "URL 유틸리티\n\n**주요 메서드:**\n- buildUrl() / getUrlParams()\n- getParam() / setParam()\n\n**특징:** Next.js 라우팅 호환")
+
+        Component(error_handler, "ErrorHandler", "src/utils/index.ts", "에러 처리 유틸리티\n\n**주요 메서드:**\n- handle() / log()\n\n**특징:** 타입 안전 에러 처리")
+
+        Component(function_utils, "Function Utils", "src/utils/index.ts", "함수형 유틸리티\n\n**주요 함수:**\n- debounce() / throttle()\n\n**특징:** 제네릭 타입 지원")
+    }
+}
+
+' ============================================================================
+' External Dependencies
+' ============================================================================
+
+ContainerDb(localStorage, "Browser Storage", "localStorage", "클라이언트 사이드 데이터 저장")
+
+System_Ext(supabase, "Supabase", "PostgreSQL 데이터베이스\n\n**테이블:**\n- campgrounds\n- reservations")
+
+' ============================================================================
+' Relationships
+' ============================================================================
+
+' Legacy Services → localStorage
+Rel(reservation_service, localStorage, "read/write", "getReservations()\nsaveReservations()")
+Rel(campground_info_service, localStorage, "read/write", "getCampgroundInfo()\nsaveCampgroundInfo()")
+Rel(campgrounds_management, localStorage, "read/write", "getAllCampgrounds()\nsaveCampgrounds()")
+
+' Modern Services → StorageManager → localStorage
+Rel(campground_service_class, storage_manager, "uses", "CRUD operations")
+Rel(reservation_service_class, storage_manager, "uses", "CRUD operations")
+Rel(user_service, storage_manager, "uses", "session management")
+Rel(storage_manager, localStorage, "manages", "get() / set() / remove()")
+
+' Supabase REST Helper → Supabase
+Rel(supabase_rest, supabase, "REST API calls", "select() / insert()\nupdate() / delete()")
+
+' Modern Services → Supabase REST (간접 사용)
+Rel_Back(campground_service_class, supabase_rest, "sync (optional)", "UUID 동기화")
+Rel_Back(reservation_service_class, supabase_rest, "sync (optional)", "데이터 동기화")
+
+' Modern Services → Utilities
+Rel(campground_service_class, date_utils, "uses", "createdAt / updatedAt")
+Rel(reservation_service_class, date_utils, "uses", "날짜 포맷")
+Rel(user_service, validation_utils, "uses", "인증 검증")
+
+' Services → Error Handler
+Rel(campground_service_class, error_handler, "uses", "에러 로깅")
+Rel(reservation_service_class, error_handler, "uses", "에러 로깅")
+Rel(storage_manager, error_handler, "uses", "localStorage 오류 처리")
+
+' ============================================================================
+' Notes
+' ============================================================================
+
+note right of legacy_services
+  **Legacy Services (함수형)**
+
+  특징:
+  - 함수 기반 설계 (Functional Programming)
+  - SSR 대응 (typeof window === 'undefined')
+  - 초기 샘플 데이터 제공
+  - 간단한 CRUD 작업
+
+  사용처:
+  - 기존 컴포넌트 (호환성)
+  - 빠른 프로토타이핑
+
+  한계:
+  - 타입 일관성 부족
+  - DI 패턴 미지원
+  - 테스트 어려움
+end note
+
+note right of modern_services
+  **Modern Services (클래스 기반)**
+
+  특징:
+  - 클래스 기반 설계 (OOP)
+  - BaseService 인터페이스 구현
+  - StorageManager 의존성 주입
+  - 타입 안전성 강화
+
+  장점:
+  - 테스트 용이 (Mocking)
+  - 확장성 (상속, 인터페이스)
+  - 일관된 API
+
+  마이그레이션:
+  - lib/ → src/services/ 점진적 전환
+  - 기존 코드 유지 (Breaking Change 방지)
+end note
+
+note right of utilities
+  **Utilities (공용 헬퍼)**
+
+  특징:
+  - 정적 메서드 (Static Methods)
+  - 재사용 가능
+  - 프레임워크 독립적
+
+  사용처:
+  - Services
+  - Components
+  - Hooks
+
+  확장:
+  - 필요시 새 유틸리티 클래스 추가
+end note
+
+' ============================================================================
+' 동기화 체크리스트
+' ============================================================================
+'
+' □ 새로운 서비스 추가 시
+'   - Component(...) 추가
+'   - Rel(...) 의존성 관계 정의
+'   - Note에 설명 추가
+'
+' □ 서비스 메서드 변경 시
+'   - Component 설명 업데이트
+'   - Level 4 (lv4-code/services/*.puml) 동기화
+'
+' □ 유틸리티 추가 시
+'   - Component(...) 추가
+'   - 사용 관계 정의
+'
+' □ 외부 시스템 통합 시
+'   - System_Ext(...) 추가
+'   - Rel(...) 통신 관계 정의
+'
+' ============================================================================
+
+legend right
+  **Level 3: Components - Services Layer**
+
+  **아키텍처 패턴**:
+  - Legacy (Functional) + Modern (Class-Based) 공존
+  - 점진적 마이그레이션 (lib/ → src/services/)
+  - 유틸리티 공용화 (src/utils/)
+
+  **데이터 흐름**:
+  1. **읽기**: Component → Service → StorageManager → localStorage
+  2. **쓰기**: Component → Service → StorageManager → localStorage
+  3. **동기화** (선택): Service → Supabase REST → Supabase DB
+
+  **레이어 책임**:
+  - **Services**: 비즈니스 로직, CRUD, 데이터 변환
+  - **Utilities**: 공용 헬퍼, 포맷, 검증, 에러 처리
+  - **StorageManager**: localStorage 추상화, SSR 대응
+
+  **마이그레이션 전략**:
+  - 신규 기능: src/services/ 사용
+  - 기존 기능: lib/ 유지 (점진적 전환)
+  - 공용 로직: src/utils/ 추출
+
+  **Next.js 통합**:
+  - SSR 대응: typeof window 체크
+  - App Router 호환
+  - Client Component에서 사용
+
+  **타입 정의**:
+  - src/types/: 도메인 모델 타입
+  - src/constants/: 설정 및 초기 데이터
+
+  **테스트 전략**:
+  - Legacy: 통합 테스트 위주
+  - Modern: 단위 테스트 + Mocking
+  - Utilities: 독립적 단위 테스트
+
+  **성능 최적화**:
+  - debounce/throttle (검색, 자동저장)
+  - localStorage 캐싱
+  - Lazy Loading (필요 시)
+
+  **향후 계획**:
+  - [ ] lib/ 완전 마이그레이션
+  - [ ] Supabase 우선 전략 (localStorage fallback)
+  - [ ] Service Worker (오프라인 지원)
+  - [ ] IndexedDB (대용량 데이터)
+end legend
+
+@enduml

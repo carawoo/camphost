@@ -1,0 +1,130 @@
+@startuml Reservation Service - Level 4 Code
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' CampHost - Reservation Service (Level 4: Code)
+' ============================================================================
+'
+' 🔗 코드 경로: lib/reservations.ts
+'
+' 예약 데이터 관리 유틸리티
+' - localStorage 기반 예약 데이터 CRUD
+' - 초기 샘플 데이터 제공
+' - 예약 검색 기능
+'
+' ============================================================================
+
+title Reservation Service - Code Level
+
+' 타입 정의
+class Reservation {
+  + id: string
+  + guestName: string
+  + phone: string
+  + roomNumber: string
+  + checkInDate: string
+  + checkOutDate: string
+  + guests: number
+  + totalAmount: number
+  + status: 'confirmed' | 'checked-in' | 'checked-out'
+  + createdAt: string
+  + actualCheckinTime?: string
+  + actualCheckoutTime?: string
+}
+
+note right of Reservation
+  예약 데이터 타입
+  - status: 예약 상태 (confirmed, checked-in, checked-out)
+  - actualCheckinTime/actualCheckoutTime: 실제 체크인/아웃 시간
+end note
+
+' 상수
+class Constants {
+  + {static} STORAGE_KEY: string = 'odoichon_reservations'
+  + {static} initialReservations: Reservation[]
+}
+
+note right of Constants
+  - STORAGE_KEY: localStorage 키
+  - initialReservations: 초기 샘플 데이터 (김철수, 이영희)
+end note
+
+' 서비스 함수들
+package "Reservation Service Functions" {
+  class ReservationService <<utility>> {
+    + {static} getReservations(): Reservation[]
+    + {static} saveReservations(reservations: Reservation[]): void
+    + {static} addReservation(data: Omit<Reservation, 'id' | 'status' | 'createdAt'>): Reservation
+    + {static} updateReservationStatus(id: string, status: Reservation['status']): boolean
+    + {static} deleteReservation(id: string): boolean
+    + {static} findReservation(guestName: string, phone: string): Reservation | null
+  }
+}
+
+note bottom of ReservationService
+  **주요 메서드**:
+  - getReservations(): localStorage에서 예약 데이터 로드 (없으면 초기 데이터)
+  - saveReservations(): localStorage에 예약 데이터 저장
+  - addReservation(): 새 예약 추가 (id, status, createdAt 자동 생성)
+  - updateReservationStatus(): 예약 상태 업데이트
+  - deleteReservation(): 예약 삭제
+  - findReservation(): 이름과 전화번호로 예약 검색
+
+  **SSR 대응**: typeof window === 'undefined' 체크
+  **에러 처리**: try-catch로 localStorage 접근 오류 처리
+end note
+
+' 외부 의존성
+database localStorage {
+  frame "Storage" {
+    [odoichon_reservations]
+  }
+}
+
+' 관계
+ReservationService --> Reservation : uses
+ReservationService --> Constants : uses
+ReservationService --> localStorage : read/write
+
+' 레이아웃
+Constants -[hidden]down- ReservationService
+Reservation -[hidden]down- Constants
+
+legend right
+  **Level 4: Code - Reservation Service**
+
+  **파일**: lib/reservations.ts
+  **타입**: Utility Functions (Functional Programming)
+  **저장소**: localStorage (Browser)
+
+  **특징**:
+  - 클래스 없이 함수 기반 설계
+  - SSR(Server-Side Rendering) 지원
+  - 초기 샘플 데이터 자동 생성
+  - 타입 안전성 (TypeScript)
+
+  **사용 예시**:
+  ```typescript
+  // 예약 조회
+  const reservations = getReservations()
+
+  // 예약 추가
+  const newReservation = addReservation({
+    guestName: '박영수',
+    phone: '010-1111-2222',
+    roomNumber: 'C동-301',
+    checkInDate: '2025-02-01',
+    checkOutDate: '2025-02-03',
+    guests: 3,
+    totalAmount: 180000
+  })
+
+  // 예약 검색
+  const found = findReservation('김철수', '010-1234-5678')
+
+  // 상태 업데이트
+  updateReservationStatus('1', 'checked-in')
+  ```
+end legend
+
+@enduml

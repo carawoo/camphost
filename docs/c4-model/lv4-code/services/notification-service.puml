@@ -1,0 +1,222 @@
+@startuml Notification Service - Level 4 Code
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' CampHost - Notification Service (Level 4: Code)
+' ============================================================================
+'
+' 🔗 코드 경로: app/api/notify/checkin/route.ts
+'
+' 체크인 알림 이메일 발송 서비스
+' - Next.js API Route
+' - Resend 이메일 서비스 통합
+' - 환경 변수 기반 설정
+'
+' ============================================================================
+
+title Notification Service - Code Level
+
+' API Request/Response 타입
+class CheckinNotificationRequest {
+  + campgroundName: string
+  + guestName: string
+  + phone: string
+  + roomNumber: string
+  + checkInDate: string
+  + checkOutDate: string
+  + guests: number
+  + amount: number
+  + contactPhone: string
+  + contactEmail: string
+}
+
+note right of CheckinNotificationRequest
+  체크인 알림 요청 데이터
+  - campgroundName: 캠핑장 이름
+  - guestName: 고객명
+  - phone: 연락처
+  - roomNumber: 객실 번호
+  - checkInDate/checkOutDate: 체크인/아웃 날짜
+  - guests: 인원 수
+  - amount: 결제 금액
+  - contactPhone/contactEmail: 캠핑장 사장님 연락처
+end note
+
+class NotificationResponse {
+  + ok: boolean
+  + error?: string
+}
+
+note right of NotificationResponse
+  API 응답 타입
+  - ok: 성공 여부
+  - error: 에러 메시지 (실패 시)
+end note
+
+' API Route Handler
+package "Next.js API Route" {
+  class CheckinNotificationRoute <<API Route>> {
+    + {static} POST(request: Request): Promise<NextResponse>
+    --
+    - parseRequestBody(request: Request): Promise<CheckinNotificationRequest>
+    - validateEnvironment(): string | null
+    - buildEmailContent(data: CheckinNotificationRequest): { subject: string, text: string }
+    - sendEmail(resend: Resend, to: string, subject: string, text: string): Promise<void>
+  }
+}
+
+note bottom of CheckinNotificationRoute
+  **POST /api/notify/checkin**
+
+  **처리 흐름**:
+  1. Request Body 파싱 (JSON)
+  2. 환경 변수 검증 (RESEND_API_KEY)
+  3. Resend 클라이언트 초기화
+  4. 이메일 수신자 결정 (NOTIFY_EMAIL 또는 기본값)
+  5. 이메일 제목 및 본문 구성
+  6. Resend API 호출 (이메일 발송)
+  7. 응답 반환 (성공/실패)
+
+  **환경 변수**:
+  - RESEND_API_KEY: Resend API 키 (필수)
+  - NOTIFY_EMAIL: 알림 수신 이메일 (선택, 기본값: odoichon@odoichon.com)
+
+  **에러 처리**:
+  - RESEND_API_KEY 미설정: 500 에러
+  - 이메일 발송 실패: 500 에러 (error.message 포함)
+end note
+
+' Resend SDK
+package "Resend SDK" {
+  class Resend {
+    + constructor(apiKey: string)
+    + emails: EmailsAPI
+  }
+
+  class EmailsAPI {
+    + send(params: EmailParams): Promise<EmailResponse>
+  }
+
+  class EmailParams {
+    + from: string
+    + to: string
+    + subject: string
+    + text: string
+  }
+
+  class EmailResponse {
+    + id: string
+  }
+}
+
+note bottom of Resend
+  **Resend 이메일 서비스**
+  - npm: resend
+  - 공식 문서: https://resend.com/docs
+
+  **발신자**: Odoichon <no-reply@odoichon.com>
+  **수신자**: NOTIFY_EMAIL 환경 변수 또는 기본값
+end note
+
+' 환경 변수
+class EnvironmentVariables <<config>> {
+  + {static} RESEND_API_KEY: string
+  + {static} NOTIFY_EMAIL?: string
+}
+
+note right of EnvironmentVariables
+  **환경 변수 설정** (.env.local)
+
+  RESEND_API_KEY=re_xxxxxxxxxxxx
+  NOTIFY_EMAIL=admin@example.com
+
+  ⚠️ RESEND_API_KEY는 필수
+end note
+
+' Next.js Framework
+class NextResponse <<framework>> {
+  + {static} json(data: any, options?: ResponseInit): NextResponse
+}
+
+note right of NextResponse
+  Next.js API Response 헬퍼
+  - 상태 코드: 200 (성공), 500 (에러)
+end note
+
+' 관계
+CheckinNotificationRoute --> CheckinNotificationRequest : parses
+CheckinNotificationRoute --> NotificationResponse : returns
+CheckinNotificationRoute --> Resend : uses
+CheckinNotificationRoute --> EnvironmentVariables : reads
+CheckinNotificationRoute --> NextResponse : uses
+
+Resend --> EmailsAPI : contains
+EmailsAPI --> EmailParams : accepts
+EmailsAPI --> EmailResponse : returns
+
+' 레이아웃
+CheckinNotificationRequest -[hidden]down- CheckinNotificationRoute
+NotificationResponse -[hidden]down- CheckinNotificationRoute
+
+legend right
+  **Level 4: Code - Notification Service**
+
+  **파일**: app/api/notify/checkin/route.ts
+  **타입**: Next.js API Route (Server-Side)
+  **통합**: Resend 이메일 서비스
+
+  **특징**:
+  - Next.js 14.2 App Router 기반
+  - POST 메서드만 지원
+  - 비동기 이메일 발송 (async/await)
+  - 환경 변수 기반 설정
+  - 에러 핸들링 (try-catch)
+
+  **이메일 형식** (Plain Text):
+  ```
+  제목: 체크인 알림 - {캠핑장명}
+
+  본문:
+  캠핑장: {campgroundName}
+  고객명: {guestName}
+  연락처: {phone}
+  객실: {roomNumber}
+  체크인/아웃: {checkInDate} ~ {checkOutDate}
+  인원: {guests}
+  금액: {amount}원
+
+  문의(사장님): {contactPhone} / {contactEmail}
+  ```
+
+  **사용 예시**:
+  ```typescript
+  // Client-side fetch 호출
+  const response = await fetch('/api/notify/checkin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      campgroundName: '오도이촌 캠핑장',
+      guestName: '김철수',
+      phone: '010-1234-5678',
+      roomNumber: 'A동-101',
+      checkInDate: '2025-01-30',
+      checkOutDate: '2025-02-01',
+      guests: 4,
+      amount: 150000,
+      contactPhone: '010-1234-5678',
+      contactEmail: 'carawoo96@gmail.com'
+    })
+  })
+
+  const result = await response.json()
+  // { ok: true } or { error: '...' }
+  ```
+
+  **Resend 설정**:
+  1. Resend 계정 생성: https://resend.com
+  2. API Key 발급
+  3. .env.local에 RESEND_API_KEY 추가
+  4. 발신 도메인 검증 (선택)
+end legend
+
+@enduml

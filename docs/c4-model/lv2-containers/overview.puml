@@ -36,17 +36,17 @@ System_Boundary(camphost, "CampHost") {
     ' ------------------------------------------------------------------------
     ' Web Application
     ' ------------------------------------------------------------------------
-    Container(webapp, "Web Application", "Next.js 14.2, React 18, TypeScript", "사용자 인터페이스 제공\n\n**주요 페이지:**\n- / (랜딩)\n- /super-admin/dashboard\n- /admin/* (대시보드, 예약, 매출)\n- /kiosk (체크인/체크아웃)\n\n**렌더링:**\n- SSR (Server-Side Rendering)\n- SSG (Static Site Generation)\n- CSR (Client-Side Rendering)")
+    Container(webapp, "Web Application", "Next.js 14.2, React 18, TypeScript", "사용자 인터페이스 제공\n\n**주요 페이지:**\n- / (랜딩 페이지)\n- /super-admin/dashboard (전체 캠핑장 관리)\n- /admin/* (대시보드, 예약, 매출, 객실, 통계, 문의, 설정)\n- /kiosk (무인 체크인/체크아웃)\n\n**아키텍처 구성:**\n- UI Components (Super Admin, Admin, Kiosk, Landing)\n- Custom Hooks (useCampgrounds, useReservations, useAuth, useForm, useFilteredData, useLocalStorage)\n- Service Layer (Legacy 함수형 + Modern 클래스 기반)\n- Shared Components (QRCodeGenerator 등)\n\n**렌더링:**\n- SSR (Server-Side Rendering)\n- SSG (Static Site Generation)\n- CSR (Client-Side Rendering)")
 
     ' ------------------------------------------------------------------------
     ' REST API
     ' ------------------------------------------------------------------------
-    Container(api, "REST API", "Next.js API Routes, Node.js", "비즈니스 로직 및 외부 서비스 통합\n\n**주요 엔드포인트:**\n- POST /api/admin/login\n- POST /api/notify/checkin\n- GET/POST /api/dev/*\n\n**역할:**\n- 인증 및 권한 검증\n- Supabase 데이터 접근\n- Resend 이메일 발송")
+    Container(api, "REST API", "Next.js API Routes, Node.js", "비즈니스 로직 및 외부 서비스 통합\n\n**주요 엔드포인트:**\n- POST /api/admin/login (관리자 인증)\n- POST /api/notify/checkin (체크인 알림)\n- POST /api/admin/reset-email (비밀번호 재설정)\n- POST /api/admin/help-email (문의 이메일)\n- GET /api/dev/seed-reservation (테스트 데이터 생성)\n- GET /api/dev/cascade-delete (캐스케이드 삭제)\n\n**역할:**\n- 인증 및 권한 검증 (Supabase 캠핑장 조회, 비밀번호 검증)\n- Supabase 데이터 접근 (CRUD)\n- Resend 이메일 발송 (Plain Text + HTML Template)\n- 개발 도구 (테스트 데이터, 삭제)")
 
     ' ------------------------------------------------------------------------
     ' Browser Storage
     ' ------------------------------------------------------------------------
-    ContainerDb(localStorage, "Browser Storage", "localStorage", "오프라인 지원 및 데이터 캐싱\n\n**저장 데이터:**\n- 캠핑장 목록\n- 예약 정보 (폴백)\n- 사용자 세션\n\n**사용 시점:**\n- 오프라인 모드\n- 네트워크 장애 시")
+    ContainerDb(localStorage, "Browser Storage", "localStorage", "오프라인 지원 및 데이터 캐싱\n\n**저장 데이터:**\n- 캠핑장 목록 (전체 캠핑장 관리)\n- 예약 정보 (폴백)\n- 사용자 세션 (로그인 상태)\n- 단일 캠핑장 정보\n\n**접근 방법:**\n- StorageManager (Modern Services)\n- 직접 접근 (Legacy Services)\n- useLocalStorage Hook\n\n**사용 시점:**\n- 오프라인 모드\n- 네트워크 장애 시\n- 초기 데이터 로딩 (샘플 데이터)")
 
 }
 
@@ -54,9 +54,9 @@ System_Boundary(camphost, "CampHost") {
 ' External Systems (외부 시스템)
 ' ============================================================================
 
-System_Ext(supabase, "Supabase", "PostgreSQL 데이터베이스\n\n**테이블:**\n- campgrounds\n- reservations\n- inquiries\n- dashboard_metrics (view)")
+System_Ext(supabase, "Supabase", "PostgreSQL 데이터베이스\n\n**테이블:**\n- campgrounds (캠핑장 정보)\n- reservations (예약 정보)\n- inquiries (문의 사항)\n- dashboard_metrics (view, 대시보드 통계)\n\n**접근 방법:**\n- Supabase REST Helper (경량 구현)\n- 직접 REST API 호출")
 
-System_Ext(resend, "Resend", "이메일 발송 서비스\n\n**이메일 종류:**\n- 체크인 알림\n- 관리자 알림")
+System_Ext(resend, "Resend", "이메일 발송 서비스\n\n**이메일 종류:**\n- 체크인 알림 (Plain Text)\n- 비밀번호 재설정 (HTML Template)\n- 회원정보 문의 (HTML Template)\n\n**수신자:**\n- NOTIFY_EMAIL 환경 변수")
 
 ' ============================================================================
 ' Relationships (관계)
@@ -91,32 +91,71 @@ note right of webapp
   - CSS Modules
 
   **주요 디렉토리:**
-  - app/ (페이지)
-  - components/ (UI 컴포넌트)
-  - src/hooks/ (커스텀 훅)
-  - lib/ (서비스 레이어)
+  - app/ (페이지: Super Admin, Admin, Kiosk, Landing)
+  - components/ (Shared Components: QRCodeGenerator 등)
+  - src/hooks/ (Custom Hooks: 데이터 관리 로직)
+  - lib/ (Legacy Services: 함수형)
+  - src/services/ (Modern Services: 클래스 기반)
+  - src/utils/ (Utilities: StorageManager, DateUtils 등)
+
+  **아키텍처 패턴:**
+  - Legacy (함수형) + Modern (클래스 기반) 공존
+  - 점진적 마이그레이션 (lib/ → src/services/)
+  - Custom Hooks로 상태 관리
+
+  **상세 구조:**
+  → lv3-components/webapp.puml
+  → lv3-components/services.puml
 end note
 
 note right of api
-  **주요 로직:**
-  - 관리자 로그인 검증
-  - 체크인 알림 발송
-  - 개발 도구 API
+  **주요 API 컴포넌트:**
+  - Admin Login API (POST /api/admin/login)
+    • Supabase 캠핑장 조회 및 비밀번호 검증
+    • 삭제된 캠핑장 차단
+    • 폴백: 하드코딩 credential
+
+  - Checkin Notification API (POST /api/notify/checkin)
+    • 체크인 정보 수신
+    • Resend 이메일 발송
+
+  - Email APIs (reset-email, help-email)
+    • HTML Template 기반 이메일
+
+  - Dev Tools API (seed-reservation, cascade-delete)
+    • 테스트 데이터 생성 및 삭제
 
   **환경 변수:**
-  - SUPABASE_URL
-  - SUPABASE_KEY
+  - SUPABASE_URL, SUPABASE_KEY
   - RESEND_API_KEY
+  - NOTIFY_EMAIL
+
+  **상세 구조:**
+  → lv3-components/api.puml
 end note
 
 note right of localStorage
+  **저장 데이터:**
+  - 캠핑장 목록 (전체/단일)
+  - 예약 정보
+  - 사용자 세션
+
+  **접근 레이어:**
+  - StorageManager (Modern, SSR 대응)
+  - 직접 접근 (Legacy)
+  - useLocalStorage Hook
+
   **캐싱 전략:**
   - Fallback for offline
   - Session persistence
+  - 초기 샘플 데이터 제공
 
   **제한 사항:**
   - 5-10MB storage limit
   - Same-origin policy
+
+  **마이그레이션 전략:**
+  - localStorage 우선 → Supabase 동기화
 end note
 
 ' ============================================================================
@@ -126,15 +165,44 @@ end note
 ' □ 새로운 실행 단위 추가 시
 '   - Container(...) 추가
 '   - Rel(...) 관계 정의
+'   - Note에 기술 스택 및 역할 설명
 '
 ' □ 컨테이너 간 관계 변경 시
 '   - Rel(...) 수정
+'   - Level 3 Component 다이어그램 확인 및 동기화
 '
 ' □ 외부 시스템 변경 시
 '   - System_Ext(...) 수정
 '   - Rel(api, 외부시스템, ...) 수정
+'   - Level 3 API Component 다이어그램 확인
 '
 ' □ 기술 스택 업데이트 시
-'   - Container 설명 업데이트
+'   - Container 설명 업데이트 (주요 페이지, 엔드포인트)
+'   - Note에 기술 스택 상세 정보 반영
+'
+' □ 아키텍처 패턴 변경 시
+'   - Web Application의 Service Layer 구조 업데이트
+'   - Legacy vs Modern 아키텍처 비율 확인
+'   - Level 3 services.puml 동기화
+'
+' □ Level 3 다이어그램 변경 시
+'   - webapp.puml 변경 → Container 설명 및 Note 업데이트
+'   - api.puml 변경 → API 엔드포인트 목록 반영
+'   - services.puml 변경 → Service Layer 구조 확인
+'
+' ============================================================================
+' Level 2 ↔ Level 3 동기화 매핑
+' ============================================================================
+'
+' Web Application Container
+'   ↔ lv3-components/webapp.puml (UI Components, Hooks, Service Layer)
+'   ↔ lv3-components/services.puml (Legacy + Modern Services)
+'
+' REST API Container
+'   ↔ lv3-components/api.puml (API 엔드포인트)
+'
+' Browser Storage Container
+'   ↔ lv3-components/webapp.puml (StorageManager)
+'   ↔ lv3-components/services.puml (Services → localStorage 관계)
 
 @enduml
