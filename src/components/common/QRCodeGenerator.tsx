@@ -25,7 +25,7 @@ export default function QRCodeGenerator({
       ? window.location.origin
       : process.env.NEXT_PUBLIC_BASE_URL || 'https://camphost.example.com'
 
-    const kioskUrl = `${baseUrl}/kiosk?campground=${encodeURIComponent(campgroundId)}`
+    const kioskUrl = `${baseUrl}/kiosk?id=${encodeURIComponent(campgroundId)}&campground=${encodeURIComponent(campgroundName)}`
     setQrUrl(kioskUrl)
 
     // QR 코드 생성
