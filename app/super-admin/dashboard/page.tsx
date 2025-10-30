@@ -186,9 +186,9 @@ export default function SuperAdminDashboard() {
           try {
             console.log('🔍 Supabase 동기화 시작...')
 
-            // 캠핑장 이름으로 UUID 찾기
-            const campground = campgrounds.find(c => c.id === id)
-            console.log('📍 찾은 캠핑장:', campground?.name, '(로컬 ID:', id, ')')
+            // Use visibleCampgrounds (Supabase data with UUID) instead of campgrounds (localStorage data)
+            const campground = visibleCampgrounds.find(c => c.id === id)
+            console.log('📍 찾은 캠핑장:', campground?.name, '(Supabase UUID:', id, ')')
 
             if (campground) {
               const query = `?name=eq.${encodeURIComponent(campground.name)}&select=id,status`
