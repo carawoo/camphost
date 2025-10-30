@@ -99,22 +99,20 @@ end legend
 ' ============================================================================
 '
 ' 📄 파일들:
-' - lv3-components/webapp.puml: Web Application 내부 컴포넌트
-' - lv3-components/api.puml: API 내부 컴포넌트
+' - lv3-components/services.puml: Services Layer 컴포넌트 (NEW)
+'   - CacheManager (lib/cache.ts) - Smart Caching
+'   - CampgroundService
+'   - SupabaseRest
 '
-' Web Application 컴포넌트:
-' - Super Admin UI (app/super-admin/)
-' - Admin Dashboard UI (app/admin/)
-' - Kiosk UI (app/kiosk/)
-' - Landing Page (app/page.tsx)
-' - Custom Hooks (src/hooks/)
-' - Service Layer (lib/, src/services/)
-' - Utilities (src/utils/)
-'
-' API 컴포넌트:
-' - Admin Login API (/api/admin/login)
-' - Checkin Notification API (/api/notify/checkin)
-' - Dev Tools API (/api/dev/*)
+' Services Layer 컴포넌트:
+' - CacheManager (lib/cache.ts)
+'   - TTL 기반 캐싱 관리자
+'   - 5분 TTL, Cache-First 전략
+'   - 자동 만료 및 갱신
+' - CampgroundService (lib/campground.ts)
+'   - 캠핑장 데이터 관리
+' - SupabaseRest (src/services/supabaseRest.ts)
+'   - Supabase REST API 클라이언트
 '
 ' 🔗 다음 레벨: lv4-code/**/*.puml
 

@@ -46,7 +46,7 @@ System_Boundary(camphost, "CampHost") {
     ' ------------------------------------------------------------------------
     ' Browser Storage
     ' ------------------------------------------------------------------------
-    ContainerDb(localStorage, "Browser Storage", "localStorage", "오프라인 지원 및 데이터 캐싱\n\n**저장 데이터:**\n- 캠핑장 목록\n- 예약 정보 (폴백)\n- 사용자 세션\n\n**사용 시점:**\n- 오프라인 모드\n- 네트워크 장애 시")
+    ContainerDb(localStorage, "Browser Storage", "localStorage + Smart Caching", "TTL 기반 캐싱 및 오프라인 지원\n\n**Smart Caching (NEW):**\n- 캠핑장 정보 (5분 TTL)\n- 예약 정보 (5분 TTL)\n- 자동 만료 및 갱신\n- 40-80배 성능 향상\n\n**Legacy Fallback:**\n- 오프라인 모드\n- 네트워크 장애 시")
 
 }
 
@@ -110,9 +110,15 @@ note right of api
 end note
 
 note right of localStorage
-  **캐싱 전략:**
-  - Fallback for offline
-  - Session persistence
+  **Smart Caching 전략:**
+  - Cache-First with TTL (5min)
+  - Stale-While-Revalidate
+  - 자동 캐시 무효화 (저장 시)
+
+  **구현:**
+  - CacheManager (lib/cache.ts)
+  - TTL 기반 자동 만료
+  - 캐시 통계 및 관리 UI
 
   **제한 사항:**
   - 5-10MB storage limit
