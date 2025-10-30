@@ -29,6 +29,15 @@ export default function RevenueManagement() {
     growthRate: 0
   })
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month')
+  const [campgroundName, setCampgroundName] = useState('')
+  const [campgroundId, setCampgroundId] = useState('')
+
+  // URL params 로드
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setCampgroundName(params.get('campground') || '오도이촌')
+    setCampgroundId(params.get('id') || '')
+  }, [])
 
   // 샘플 데이터 로드
   useEffect(() => {
@@ -81,7 +90,7 @@ export default function RevenueManagement() {
         {/* 헤더 */}
         <div className="dashboard-header">
           <div className="header-left">
-            <Link href="/admin/dashboard" className="back-link">← 대시보드로</Link>
+            <Link href={`/admin/dashboard?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`} className="back-link">← 대시보드로</Link>
             <div className="logo">
               <span className="logo-icon">💰</span>
               <h1>수익 관리</h1>

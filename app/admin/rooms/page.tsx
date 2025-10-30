@@ -19,6 +19,8 @@ export default function RoomManagement() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [campgroundName, setCampgroundName] = useState('')
+  const [campgroundId, setCampgroundId] = useState('')
   const [newRoom, setNewRoom] = useState({
     name: '',
     type: 'A동',
@@ -27,6 +29,13 @@ export default function RoomManagement() {
     amenities: [] as string[],
     description: ''
   })
+
+  // URL params 로드
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setCampgroundName(params.get('campground') || '오도이촌')
+    setCampgroundId(params.get('id') || '')
+  }, [])
 
   // 샘플 데이터 로드
   useEffect(() => {
@@ -153,7 +162,7 @@ export default function RoomManagement() {
         {/* 헤더 */}
         <div className="dashboard-header">
           <div className="header-left">
-            <Link href="/admin/dashboard" className="back-link">← 대시보드로</Link>
+            <Link href={`/admin/dashboard?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`} className="back-link">← 대시보드로</Link>
             <div className="logo">
               <span className="logo-icon">🏕️</span>
               <h1>객실 관리</h1>
