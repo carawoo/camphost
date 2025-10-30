@@ -210,7 +210,7 @@ export default function AdminSettings() {
         <div className="dashboard-container">
           <div className="dashboard-header">
             <div className="header-left">
-              <Link href={`/admin/dashboard?campground=${encodeURIComponent(campgroundName)}`} className="back-link">← 대시보드로</Link>
+              <Link href={`/admin/dashboard?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`} className="back-link">← 대시보드로</Link>
               <div className="logo">
                 <span className="logo-icon">⚙️</span>
                 <h1>설정</h1>
@@ -250,7 +250,7 @@ export default function AdminSettings() {
         {/* 헤더 */}
         <div className="dashboard-header">
           <div className="header-left">
-            <Link href={`/admin/dashboard?campground=${encodeURIComponent(campgroundName)}`} className="back-link">← 대시보드로</Link>
+            <Link href={`/admin/dashboard?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`} className="back-link">← 대시보드로</Link>
             <div className="logo">
               <span className="logo-icon">⚙️</span>
               <h1>설정</h1>
