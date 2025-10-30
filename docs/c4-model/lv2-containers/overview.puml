@@ -1,128 +1,140 @@
-@startuml
-' ==============================================================================
-' [Level 2] Container - API Monorepo
-' ==============================================================================
-' Project: @pioncorp/api-monorepo-starter
-' Description: Monorepo 내부의 Apps와 Packages (Containers)
-'
-' 🔗 코드 경로:
-'    • apps/* - 실행 가능한 애플리케이션
-'    • packages/* - 공유 라이브러리/도메인
-'
-' 🔄 동기화 규칙:
-'    ✅ lv1 (system.puml) - 외부 시스템 연결 확인
-'    ✅ lv3 (sample-domain.puml) 변경 시 이 다이어그램 확인 필요
-'    ✅ 새로운 패키지/앱 추가 시 이 다이어그램 업데이트
-'
-' 📍 변경 대상:
-'    • Container - Apps/Packages 추가/제거
-'    • Rel - 패키지 간 의존성 변경
-'    • External Services 연결
-'
-' 🔍 드릴다운:
-'    • sample-domain → ../lv3-components/sample-domain.puml
-'    • (hono-api, shared-core, shared-config는 Level 3 없음 - 단순 구조)
-'
-' ⬆️  Zoom Out: ../lv1-system-context/system.puml
-' ==============================================================================
-
+@startuml CampHost Container Diagram
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+' ============================================================================
+' Level 2: Container Diagram
+' ============================================================================
+'
+' CampHost 시스템 내부의 주요 컨테이너(실행 단위)를 표현합니다.
+' - Web Application (Next.js)
+' - REST API (Next.js API Routes)
+' - Browser Storage (localStorage)
+' - 외부 시스템과의 관계
+'
+' 🔗 이전 레벨: lv1-system-context/system.puml
+' 🔗 다음 레벨: lv3-components/*.puml
+' ============================================================================
 
 LAYOUT_WITH_LEGEND()
 
-title [Level 2] Container - API Monorepo
+title Container Diagram for CampHost
 
-Person(end_user, "End User", "API 사용자")
-Person(developer, "Developer", "개발자")
+' ============================================================================
+' Actors (사용자)
+' ============================================================================
 
-System_Boundary(monorepo, "API Monorepo") {
+Person(superAdmin, "Super Admin", "시스템 전체 관리자")
+Person(campgroundAdmin, "Campground Admin", "캠핑장 사장님")
+Person(camper, "Camper", "캠핑 고객")
 
-    ' ========== Apps ==========
-    Container_Boundary(apps, "Applications") {
-        Container(hono_api, "Hono API", "Hono.js / TypeScript", "HTTP REST API Server\n- Routes & Controllers\n- Middleware\n- Error Handling")
-    }
+' ============================================================================
+' System Boundary
+' ============================================================================
 
-    ' ========== Packages (Domain) ==========
-    Container_Boundary(domain_packages, "Domain Packages") {
-        Container(sample_domain, "sample-domain", "@pioncorp/sample-domain", "비즈니스 로직\n- UserService\n- NotificationService\n- Strategy Pattern")
-    }
+System_Boundary(camphost, "CampHost") {
 
-    ' ========== Packages (Shared) ==========
-    Container_Boundary(shared_packages, "Shared Packages") {
-        Container(shared_core, "shared-core", "@pioncorp/shared-core", "공통 유틸리티\n- Logger\n- DI Container Setup\n- Common Types")
+    ' ------------------------------------------------------------------------
+    ' Web Application
+    ' ------------------------------------------------------------------------
+    Container(webapp, "Web Application", "Next.js 14.2, React 18, TypeScript", "사용자 인터페이스 제공\n\n**주요 페이지:**\n- / (랜딩)\n- /super-admin/dashboard\n- /admin/* (대시보드, 예약, 매출)\n- /kiosk (체크인/체크아웃)\n\n**렌더링:**\n- SSR (Server-Side Rendering)\n- SSG (Static Site Generation)\n- CSR (Client-Side Rendering)")
 
-        Container(shared_config, "shared-config", "@pioncorp/shared-config", "공통 설정\n- TypeScript Config\n- ESLint Config\n- Vitest Config")
-    }
+    ' ------------------------------------------------------------------------
+    ' REST API
+    ' ------------------------------------------------------------------------
+    Container(api, "REST API", "Next.js API Routes, Node.js", "비즈니스 로직 및 외부 서비스 통합\n\n**주요 엔드포인트:**\n- POST /api/admin/login\n- POST /api/notify/checkin\n- GET/POST /api/dev/*\n\n**역할:**\n- 인증 및 권한 검증\n- Supabase 데이터 접근\n- Resend 이메일 발송")
+
+    ' ------------------------------------------------------------------------
+    ' Browser Storage
+    ' ------------------------------------------------------------------------
+    ContainerDb(localStorage, "Browser Storage", "localStorage", "오프라인 지원 및 데이터 캐싱\n\n**저장 데이터:**\n- 캠핑장 목록\n- 예약 정보 (폴백)\n- 사용자 세션\n\n**사용 시점:**\n- 오프라인 모드\n- 네트워크 장애 시")
+
 }
 
-' External Systems
-System_Ext(email_service, "Email Service", "AWS SES / SendGrid")
-System_Ext(sms_service, "SMS Service", "Twilio")
-System_Ext(push_service, "Push Service", "Firebase FCM")
-System_Ext(kakao_service, "Kakao Service", "Kakao Talk API")
+' ============================================================================
+' External Systems (외부 시스템)
+' ============================================================================
 
-' User to Apps
-Rel(end_user, hono_api, "HTTP 요청", "REST/JSON")
-Rel(developer, hono_api, "개발/테스트", "Local Dev Server")
+System_Ext(supabase, "Supabase", "PostgreSQL 데이터베이스\n\n**테이블:**\n- campgrounds\n- reservations\n- inquiries\n- dashboard_metrics (view)")
 
-' Apps to Packages
-Rel(hono_api, sample_domain, "비즈니스 로직 호출", "Function Call")
-Rel(hono_api, shared_core, "로깅/유틸 사용", "Import")
+System_Ext(resend, "Resend", "이메일 발송 서비스\n\n**이메일 종류:**\n- 체크인 알림\n- 관리자 알림")
 
-' Domain to Shared
-Rel(sample_domain, shared_core, "로깅/DI 사용", "Import")
+' ============================================================================
+' Relationships (관계)
+' ============================================================================
 
-' Shared Config (Build Time)
-Rel_Back(hono_api, shared_config, "빌드 설정", "extends")
-Rel_Back(sample_domain, shared_config, "빌드 설정", "extends")
-Rel_Back(shared_core, shared_config, "빌드 설정", "extends")
+' Users → Web Application
+Rel(superAdmin, webapp, "캠핑장 관리", "HTTPS\n브라우저")
+Rel(campgroundAdmin, webapp, "예약 관리", "HTTPS\n브라우저")
+Rel(camper, webapp, "체크인/체크아웃", "HTTPS\n브라우저")
 
-' Domain to External Services
-Rel(sample_domain, email_service, "이메일 발송", "HTTPS/API")
-Rel(sample_domain, sms_service, "SMS 발송", "HTTPS/API")
-Rel(sample_domain, push_service, "푸시 발송", "HTTPS/API")
-Rel(sample_domain, kakao_service, "알림톡 발송", "HTTPS/API")
+' Web Application → REST API
+Rel(webapp, api, "API 호출", "JSON/HTTPS\n- fetch()\n- axios")
 
-SHOW_LEGEND()
+' Web Application → Browser Storage
+Rel(webapp, localStorage, "데이터 캐싱/읽기", "JavaScript\n- localStorage.setItem()\n- localStorage.getItem()")
 
-note right of monorepo
-  <b>Monorepo 구조</b>
-  • apps/* - 실행 가능한 애플리케이션
-  • packages/* - 공유 라이브러리
+' REST API → Supabase
+Rel(api, supabase, "CRUD 작업", "REST API\n- SELECT\n- INSERT\n- UPDATE\n- DELETE")
 
-  <b>빌드 시스템</b>
-  • Turborepo - 태스크 오케스트레이션
-  • Yarn Workspaces - 패키지 관리
-  • Changesets - 버전 관리
+' REST API → Resend
+Rel(api, resend, "이메일 전송", "REST API\n- POST /emails")
+
+' ============================================================================
+' Notes
+' ============================================================================
+
+note right of webapp
+  **기술 스택:**
+  - Next.js 14.2 (App Router)
+  - React 18.3
+  - TypeScript 5.4
+  - CSS Modules
+
+  **주요 디렉토리:**
+  - app/ (페이지)
+  - components/ (UI 컴포넌트)
+  - src/hooks/ (커스텀 훅)
+  - lib/ (서비스 레이어)
 end note
 
-note bottom of sample_domain
-  <b>🔍 Drill Down</b>
-  이 컨테이너의 내부 구조:
-  → ../lv3-components/sample-domain.puml
+note right of api
+  **주요 로직:**
+  - 관리자 로그인 검증
+  - 체크인 알림 발송
+  - 개발 도구 API
 
-  <b>주요 컴포넌트</b>
-  • UserService
-  • NotificationService
-  • Provider Strategy
+  **환경 변수:**
+  - SUPABASE_URL
+  - SUPABASE_KEY
+  - RESEND_API_KEY
 end note
 
-note as SyncGuide #FFE0E0
-  <b>⚠️  동기화 체크리스트</b>
-  ====
-  이 다이어그램 변경 시:
+note right of localStorage
+  **캐싱 전략:**
+  - Fallback for offline
+  - Session persistence
 
-  ☐ 새로운 패키지/앱 추가?
-     → Container 추가
-     → Rel 의존성 추가
-     → lv1에서 외부 시스템 연결 확인
-
-  ☐ lv3 (sample-domain.puml) 변경 시
-     이 다이어그램의 설명 업데이트
-
-  ☐ 외부 서비스 추가/제거 시
-     → lv1 (system.puml) 동기화
-     → sample_domain → 외부 서비스 Rel 추가
+  **제한 사항:**
+  - 5-10MB storage limit
+  - Same-origin policy
 end note
+
+' ============================================================================
+' 동기화 체크리스트
+' ============================================================================
+'
+' □ 새로운 실행 단위 추가 시
+'   - Container(...) 추가
+'   - Rel(...) 관계 정의
+'
+' □ 컨테이너 간 관계 변경 시
+'   - Rel(...) 수정
+'
+' □ 외부 시스템 변경 시
+'   - System_Ext(...) 수정
+'   - Rel(api, 외부시스템, ...) 수정
+'
+' □ 기술 스택 업데이트 시
+'   - Container 설명 업데이트
 
 @enduml
