@@ -2,10 +2,10 @@
 id: EPIC-94f19e2
 title: CampHost C4 Model 아키텍처 문서화
 type: epic
-status: IN_REVIEW
+status: DONE
 priority: medium
 created: 2025-10-30T10:06:55Z
-updated: 2025-10-30T10:11:33Z
+updated: 2025-10-30T10:17:49Z
 branch: "feature/EPIC-94f19e2"
 pr_url: "https://github.com/carawoo/camphost/pull/1"
 ---
