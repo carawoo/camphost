@@ -7,7 +7,7 @@ priority: high
 created: 2025-10-30T14:23:36Z
 updated: 2025-10-30T14:23:36Z
 branch: "feature/EPIC-6f07e17"
-pr_url: ""
+pr_url: "https://github.com/carawoo/camphost/pull/11"
 ---
 
 # Epic: Bulk Delete Reservations in Admin
