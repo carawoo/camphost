@@ -26,6 +26,8 @@ export default function CheckInKiosk() {
   const [campgroundId, setCampgroundId] = useState<string | null>(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [campgroundStatus, setCampgroundStatus] = useState<string>('')
+  const [actualCheckinTime, setActualCheckinTime] = useState<string | null>(null)
+  const [actualCheckoutTime, setActualCheckoutTime] = useState<string | null>(null)
 
   // 캠핑장 정보 로드 (Supabase 우선, 폴백은 로컬)
   useEffect(() => {
@@ -311,11 +313,12 @@ export default function CheckInKiosk() {
       let updated = false
       try {
         if (name && supabaseRest.isEnabled()) {
-          const actualCheckinTime = new Date().toISOString()
+          const checkinTime = new Date().toISOString()
+          setActualCheckinTime(checkinTime)
           await (supabaseRest as any).update('reservations', {
             status: 'checked-in',
-            updated_at: actualCheckinTime,
-            actual_checkin_time: actualCheckinTime
+            updated_at: checkinTime,
+            actual_checkin_time: checkinTime
           }, `?id=eq.${foundReservation.id}`)
           updated = true
         }
@@ -360,11 +363,12 @@ export default function CheckInKiosk() {
       let updated = false
       try {
         if (name && supabaseRest.isEnabled()) {
-          const actualCheckoutTime = new Date().toISOString()
+          const checkoutTime = new Date().toISOString()
+          setActualCheckoutTime(checkoutTime)
           await (supabaseRest as any).update('reservations', {
             status: 'checked-out',
-            updated_at: actualCheckoutTime,
-            actual_checkout_time: actualCheckoutTime
+            updated_at: checkoutTime,
+            actual_checkout_time: checkoutTime
           }, `?id=eq.${foundReservation.id}`)
           updated = true
         }
@@ -626,6 +630,46 @@ export default function CheckInKiosk() {
                     </>
                   )}
                 </p>
+                {mode === 'checkin' && actualCheckinTime && (
+                  <div style={{
+                    marginTop: '20px',
+                    padding: '16px',
+                    background: '#f0fdf4',
+                    borderRadius: '8px',
+                    border: '1px solid #86efac'
+                  }}>
+                    <div style={{ fontSize: '14px', color: '#166534', marginBottom: '4px' }}>실제 체크인 시간</div>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#15803d' }}>
+                      {new Date(actualCheckinTime).toLocaleString('ko-KR', {
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      })}
+                    </div>
+                  </div>
+                )}
+                {mode === 'checkout' && actualCheckoutTime && (
+                  <div style={{
+                    marginTop: '20px',
+                    padding: '16px',
+                    background: '#fef3c7',
+                    borderRadius: '8px',
+                    border: '1px solid #fbbf24'
+                  }}>
+                    <div style={{ fontSize: '14px', color: '#92400e', marginBottom: '4px' }}>실제 체크아웃 시간</div>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#b45309' }}>
+                      {new Date(actualCheckoutTime).toLocaleString('ko-KR', {
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      })}
+                    </div>
+                  </div>
+                )}
                 {/* 캠핑장 안내/사장님 메시지 */}
                 {mode === 'checkin' && (
                   <button onClick={() => setShowSuccessModal(true)} className="result-btn primary" style={{ marginBottom: 12 }}>체크인 정보 보기</button>

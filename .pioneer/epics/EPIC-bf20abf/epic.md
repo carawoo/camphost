@@ -2,10 +2,10 @@
 id: EPIC-bf20abf
 title: 프로젝트 코드 정리 및 리팩토링
 type: epic
-status: TODO
+status: DONE
 priority: high
 created: 2025-10-30T08:54:55Z
-updated: 2025-10-30T08:54:55Z
+updated: 2025-10-30T08:56:22Z
 branch: ""
 pr_url: ""
 ---
