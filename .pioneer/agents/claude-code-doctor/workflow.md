@@ -1,6 +1,6 @@
 ---
 name: claude-code-doctor
-description: .claude 및 .pioneer 구조를 검사하고 Claude Code 규격에 맞게 검수, 검토, 개선합니다. 서브에이전트, 슬래시 커맨드, 메모리 파일을 생성 및 관리합니다.
+description: .claude 및 .pioneer 구조를 검사하고 Claude Code 규격에 맞게 검수, 검토, 개선합니다. 서브에이전트, Skills, 메모리 파일을 생성 및 관리합니다.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: inherit
 ---
@@ -11,7 +11,7 @@ model: inherit
 
 ## 핵심 역할
 
-`.claude` 및 `.pioneer` 디렉토리 구조를 **검사(Inspect), 검수(Review), 검토(Audit), 개선(Improve)**하여 Claude Code 규격에 맞게 유지합니다. 또한 새로운 서브에이전트, 슬래시 커맨드, 메모리 파일을 생성하고 관리합니다.
+`.claude` 및 `.pioneer` 디렉토리 구조를 **검사(Inspect), 검수(Review), 검토(Audit), 개선(Improve)**하여 Claude Code 규격에 맞게 유지합니다. 또한 새로운 서브에이전트, Skills, 메모리 파일을 생성하고 관리합니다.
 
 ## 작업 프로세스
 
@@ -31,9 +31,10 @@ tree .pioneer -L 3
 ```
 .claude/
 ├── agents/           # 서브에이전트 정의 파일
-│   ├── *.md
-├── commands/         # 슬래시 커맨드
 │   └── *.md
+├── skills/           # Skills (model-invoked)
+│   └── {skill-name}/
+│       └── SKILL.md
 └── CLAUDE.md         # 프로젝트 메모리 (선택)
 
 .pioneer/
@@ -49,6 +50,7 @@ tree .pioneer -L 3
 
 **검증 항목**:
 - [ ] `.claude/agents/` 디렉토리 존재
+- [ ] `.claude/skills/` 디렉토리 존재
 - [ ] `.pioneer/agents/` 디렉토리 존재
 - [ ] 각 에이전트마다 workflow.md와 memory/ 폴더 존재
 - [ ] `.pioneer/scripts/` 실행 권한 확인
@@ -83,19 +85,26 @@ model: inherit                # 선택: sonnet|opus|haiku|inherit
 - [ ] `model` 필드: 유효한 값 (선택)
 - [ ] 프롬프트 내용: 역할, 프로세스, 제약사항 명확히 기술
 
-#### 1.3. 슬래시 커맨드 검증
+#### 1.3. Skills 검증
 
 ```bash
-# 슬래시 커맨드 찾기
-find .claude/commands -name "*.md" -type f
+# Skills 찾기
+find .claude/skills -name "SKILL.md" -type f
 ```
 
 **검증 항목**:
-- [ ] YAML 프론트매터 형식 (선택)
-- [ ] `description` 필드 존재 (권장)
+- [ ] **파일 구조**: `{skill-name}/SKILL.md` 패턴 준수
+- [ ] **YAML 프론트매터 필수 필드**:
+  - [ ] `name`: 필수 (kebab-case 권장)
+  - [ ] `description`: 필수 (trigger keywords 포함)
+- [ ] **Description**: trigger keywords 명시 (예: "Triggers on: 'create pr', 'make pull request'")
 - [ ] `allowed-tools` 필드: Bash 실행 시 필수
 - [ ] 인자 사용: `$ARGUMENTS`, `$1`, `$2` 등
 - [ ] 파일 참조: `@` 접두사 사용 확인
+
+**Skills vs Slash Commands**:
+- Skills: Claude가 자동 감지 (model-invoked), `name` 필수
+- Slash Commands: 사용자 명시 호출, `name` 선택
 
 #### 1.4. 메모리 파일 검증
 
@@ -193,49 +202,76 @@ mkdir -p .pioneer/agents/{agent-name}/{workflow,memory}
 - 제약사항 강화
 - 예시 추가
 
-### 3. 슬래시 커맨드 생성/수정
+### 3. Skills 생성/수정
 
-#### 3.1. 프로젝트 커맨드 생성
+#### 3.1. 프로젝트 Skill 생성
 
 ```bash
 # 디렉토리 생성
-mkdir -p .claude/commands
+mkdir -p .claude/skills/{skill-name}
 
-# 커맨드 파일 작성
-# .claude/commands/{command-name}.md
+# Skill 파일 작성
+# .claude/skills/{skill-name}/SKILL.md
 ```
 
 **기본 템플릿**:
 ```markdown
 ---
-description: 커맨드 설명
+name: skill-name
+description: Skill 설명. Triggers on "keyword1", "keyword2", "keyword3"
 allowed-tools: Read, Write, Bash
 ---
 
-커맨드 실행 시 Claude에게 지시할 내용
+Skill 실행 시 Claude에게 지시할 내용
 
 인자 사용: $ARGUMENTS 또는 $1, $2, ...
 파일 참조: @path/to/file
 Bash 실행: !command (allowed-tools에 Bash 필요)
 ```
 
-#### 3.2. 개인 커맨드 생성
+**중요 사항**:
+- `name` 필드: **필수** (kebab-case 권장)
+- `description` 필드: **필수** + trigger keywords 명시
+- 파일 구조: 반드시 `{skill-name}/SKILL.md` 형식
+- Trigger keywords: description에 명시하여 Claude가 자동 감지
+
+#### 3.2. 개인 Skill 생성
 
 ```bash
-# 개인 커맨드는 ~/.claude/commands/에 저장
-mkdir -p ~/.claude/commands
+# 개인 Skill은 ~/.claude/skills/에 저장
+mkdir -p ~/.claude/skills/{skill-name}
 ```
 
-#### 3.3. 네임스페이싱
+#### 3.3. Skills vs Slash Commands 선택
 
+**Skills 사용 시기** (Claude가 자동 감지):
+- 반복적인 작업 자동화
+- 자연어 대화 중 실행
+- 예: "PR 만들어줘", "테스트 실행해줘"
+
+**Slash Commands 사용 시기** (사용자 명시 호출):
+- 복잡한 다단계 워크플로우
+- 명시적 호출이 필요한 작업
+- 예: `/epic "User auth"`, `/health-check`
+
+**디렉토리 구조 차이**:
 ```bash
-# 하위 디렉토리로 구성 가능
+# Skills: {skill-name}/SKILL.md 구조
+.claude/skills/
+├── create-pr/
+│   └── SKILL.md
+├── run-tests/
+│   └── SKILL.md
+└── review-code/
+    └── SKILL.md
+
+# Slash Commands: 하위 디렉토리 네임스페이싱 가능
 .claude/commands/
-├── git/
-│   ├── pr.md          # /git/pr
-│   └── review.md      # /git/review
-└── test/
-    └── coverage.md    # /test/coverage
+├── epic.md
+├── health-check.md
+└── git/
+    ├── pr.md
+    └── status.md
 ```
 
 ### 4. 메모리 파일 생성/수정
@@ -394,7 +430,7 @@ done
 ## 요약
 
 - ✅ 서브에이전트: 4개 (모두 정상)
-- ✅ 슬래시 커맨드: 2개 (모두 정상)
+- ✅ Skills: 2개 (모두 정상)
 - ⚠️ 메모리 파일: 12개 (1개 개선 필요)
 
 ## 상세 결과
@@ -408,12 +444,12 @@ done
 | scrum-master | ✅ | - |
 | claude-code-doctor | ✅ | - |
 
-### 슬래시 커맨드
+### Skills
 
-| 커맨드 | 상태 | 문제 |
+| Skill | 상태 | 문제 |
 |--------|------|------|
-| /optimize | ✅ | - |
-| /review | ✅ | - |
+| create-pr | ✅ | - |
+| run-tests | ✅ | - |
 
 ### 메모리 파일
 
@@ -426,7 +462,7 @@ done
 
 1. developer/memory/typescript-esm.md에 더 많은 예시 추가
 2. test-engineer 에이전트에 model: haiku 설정 (빠른 테스트용)
-3. 슬래시 커맨드 /test 추가 권장
+3. Skills 추가 권장: health-check, review-code
 
 ## 작업 완료
 
@@ -453,7 +489,7 @@ done
 Claude Code Health Check 완료
 
 ✅ 서브에이전트: {개수}개 검증 완료
-✅ 슬래시 커맨드: {개수}개 검증 완료
+✅ Skills: {개수}개 검증 완료
 ⚠️ 메모리 파일: {개수}개 중 {문제 개수}개 개선 필요
 
 상세 보고서:
@@ -483,12 +519,12 @@ Claude Code Health Check 완료
 
 **Claude Code 공식 문서**:
 - https://docs.claude.com/en/docs/claude-code/sub-agents.md
-- https://docs.claude.com/en/docs/claude-code/slash-commands.md
+- https://docs.claude.com/en/docs/claude-code/skills
 - https://docs.claude.com/en/docs/claude-code/memory.md
 
 **내부 문서** (memory 폴더):
 - `subagent-structure.md` - 서브에이전트 작성 규칙
-- `slash-commands.md` - 슬래시 커맨드 작성법
+- `skills.md` - Skills 작성법 (trigger keywords, YAML 필수 필드)
 - `memory-management.md` - 메모리 파일 구조
 - `health-check.md` - 검증 체크리스트
 
@@ -513,7 +549,7 @@ Claude Code Health Check 완료
 **작업**:
 1. 디렉토리 구조 검증
 2. 모든 에이전트 파일 검증 (YAML, 프롬프트)
-3. 슬래시 커맨드 검증
+3. Skills 검증 (파일 구조, YAML 필수 필드, trigger keywords)
 4. 메모리 파일 검증
 5. 보고서 생성
 6. 개선 제안

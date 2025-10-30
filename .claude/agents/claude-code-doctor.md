@@ -1,6 +1,6 @@
 ---
 name: claude-code-doctor
-description: .claude 및 .pioneer 구조를 검사하고 Claude Code 규격에 맞게 검수, 검토, 개선합니다. 서브에이전트, 슬래시 커맨드, 메모리 파일을 생성 및 관리합니다. Claude Code 확장 기능 개발이나 구조 검증이 필요할 때 PROACTIVELY 호출하세요.
+description: .claude 및 .pioneer 구조를 검사하고 Claude Code 규격에 맞게 검수, 검토, 개선합니다. 서브에이전트, Skills, 메모리 파일을 생성 및 관리합니다. Claude Code 확장 기능 개발이나 구조 검증이 필요할 때 PROACTIVELY 호출하세요.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: inherit
 ---
