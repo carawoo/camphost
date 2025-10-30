@@ -439,7 +439,9 @@ export default function CheckInKiosk() {
             <p>문제가 있으신가요? 관리자에게 문의해주세요</p>
             <div className="contact-info">
               <span>📞 문의: {campgroundInfo?.contactPhone || '010-2592-3007'}</span>
-              <span>📧 이메일: {campgroundInfo?.contactEmail || 'carawoo96@gmail.com'}</span>
+              {campgroundInfo?.contactEmail && (
+                <span>📧 이메일: {campgroundInfo.contactEmail}</span>
+              )}
             </div>
           </div>
         </div>
@@ -702,7 +704,9 @@ export default function CheckInKiosk() {
         <div className="kiosk-footer">
           <p>문제가 있으시면 관리자에게 문의해주세요</p>
           <p>📞 문의: {campgroundInfo?.contactPhone || '010-2592-3007'}</p>
-          <p>📧 이메일: {campgroundInfo?.contactEmail || 'carawoo96@gmail.com'}</p>
+          {campgroundInfo?.contactEmail && (
+            <p>📧 이메일: {campgroundInfo.contactEmail}</p>
+          )}
         </div>
       </div>
     </div>
