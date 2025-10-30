@@ -693,10 +693,11 @@ export default function ReservationManagement() {
                 </div>
                 <div className="form-group">
                   <label>체크인 날짜 *</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={newReservation.checkInDate}
                     onChange={(e) => setNewReservation({ ...newReservation, checkInDate: e.target.value })}
+                    style={{ width: '100%' }}
                   />
                 </div>
                 <div className="form-group">
@@ -705,6 +706,7 @@ export default function ReservationManagement() {
                     type="date"
                     value={newReservation.checkOutDate}
                     onChange={(e) => setNewReservation({ ...newReservation, checkOutDate: e.target.value })}
+                    style={{ width: '100%' }}
                   />
                 </div>
                 <div className="form-group">
@@ -771,10 +773,11 @@ export default function ReservationManagement() {
               </div>
               <div className="form-group">
                 <label>체크인 날짜 *</label>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   value={editing.checkInDate}
                   onChange={(e) => setEditing({ ...(editing as Reservation), checkInDate: e.target.value })}
+                  style={{ width: '100%' }}
                 />
               </div>
               <div className="form-group">
@@ -783,6 +786,7 @@ export default function ReservationManagement() {
                   type="date"
                   value={editing.checkOutDate}
                   onChange={(e) => setEditing({ ...(editing as Reservation), checkOutDate: e.target.value })}
+                  style={{ width: '100%' }}
                 />
               </div>
               <div className="form-group">
