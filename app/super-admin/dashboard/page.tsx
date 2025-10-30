@@ -96,7 +96,7 @@ export default function SuperAdminDashboard() {
     })()
   }, [campgrounds, visibleCampgrounds])
 
-  // Supabase와 동기화하여 삭제된 항목은 표시 제외
+  // Supabase에서 직접 캠핑장 데이터 로드 (UUID 사용)
   useEffect(() => {
     ;(async () => {
       if (!supabaseRest.isEnabled()) {
@@ -104,12 +104,35 @@ export default function SuperAdminDashboard() {
         return
       }
       try {
-        const rows = await supabaseRest.select<any[]>('campgrounds', '?select=id,name')
-        const validIds = new Set((rows || []).map(r => r.id))
-        // id 우선, id가 없으면 name으로 보조 매칭
-        const validNames = new Set((rows || []).map(r => r.name))
-        const filtered = campgrounds.filter(c => (c.id && validIds.has(c.id)) || validNames.has(c.name))
-        setVisibleCampgrounds(filtered)
+        const rows = await supabaseRest.select<any[]>('campgrounds', '?select=*')
+        if (rows && rows.length > 0) {
+          // Supabase 데이터를 Campground 타입으로 매핑 (UUID 사용)
+          const supabaseCampgrounds: Campground[] = rows.map(r => ({
+            id: r.id, // Supabase UUID 사용
+            name: r.name,
+            owner: {
+              name: r.owner_name || '',
+              email: r.owner_email || '',
+              phone: r.contact_phone || ''
+            },
+            contactInfo: {
+              phone: r.contact_phone || '',
+              email: r.contact_email || ''
+            },
+            address: r.address || '',
+            description: r.description || '',
+            status: r.status || 'pending',
+            subscriptionPlan: r.subscription_plan || 'basic',
+            adminUrl: r.admin_url || '',
+            kioskUrl: r.kiosk_url || '',
+            createdAt: r.created_at || new Date().toISOString(),
+            updatedAt: r.updated_at || new Date().toISOString()
+          }))
+          setVisibleCampgrounds(supabaseCampgrounds)
+          return
+        }
+        // Fallback: 로컬 데이터 사용
+        setVisibleCampgrounds(campgrounds)
       } catch {
         setVisibleCampgrounds(campgrounds)
       }
