@@ -909,7 +909,7 @@ export default function CheckInKiosk() {
         {/* 체크인 완료 팝업 */}
         {step === 'success' && showSuccessModal && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={() => setShowSuccessModal(false)}>
-            <div style={{ background: '#fffdf8', borderRadius: 12, width: 'min(92vw, 560px)', padding: 24, border: '1px solid #e7e1d7' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ background: '#fffdf8', borderRadius: 12, width: 'min(92vw, 560px)', maxHeight: '90vh', overflowY: 'auto', padding: 24, border: '1px solid #e7e1d7' }} onClick={(e) => e.stopPropagation()}>
               <h4 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#2E3D31' }}>체크인 정보</h4>
               <div className="confirm-info" style={{ marginTop: 16 }}>
                 <div className="info-item">
