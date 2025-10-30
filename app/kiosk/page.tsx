@@ -385,6 +385,9 @@ export default function CheckInKiosk() {
         console.error('Failed to save charcoal time:', error)
         // Continue anyway - don't block user
       }
+    } else {
+      // Clear selected time when skipping
+      setSelectedCharcoalTime(null)
     }
 
     setShowCharcoalSelection(false)
@@ -933,6 +936,7 @@ export default function CheckInKiosk() {
                 }}
               >
                 <option value="">-- 시간대를 선택하세요 --</option>
+                <option value="필요없음">숯불 예약 필요없음</option>
                 {charcoalTimeOptions.map((option, index) => (
                   <option key={index} value={option}>{option}</option>
                 ))}
@@ -948,7 +952,13 @@ export default function CheckInKiosk() {
                 </button>
                 <button
                   className="result-btn primary"
-                  onClick={() => handleCharcoalSelection(selectedCharcoalTime)}
+                  onClick={() => {
+                    if (selectedCharcoalTime === '필요없음') {
+                      handleCharcoalSelection(null)
+                    } else {
+                      handleCharcoalSelection(selectedCharcoalTime)
+                    }
+                  }}
                   disabled={!selectedCharcoalTime}
                   style={{ flex: 1 }}
                 >
