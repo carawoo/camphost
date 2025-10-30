@@ -32,6 +32,8 @@ export default function ReservationManagement() {
   const [campgroundName, setCampgroundName] = useState<string>('')
   const [editing, setEditing] = useState<Reservation | null>(null)
   const [repeatCounts, setRepeatCounts] = useState<Record<string, number>>({})
+  const [deleteMode, setDeleteMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [newReservation, setNewReservation] = useState({
     guestName: '',
     phone: '',
@@ -239,6 +241,45 @@ export default function ReservationManagement() {
     }
   }
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) {
+      alert('삭제할 예약을 선택해주세요.')
+      return
+    }
+
+    const confirmed = window.confirm(
+      `선택한 ${selectedIds.size}개의 예약을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`
+    )
+
+    if (!confirmed) return
+
+    try {
+      if (!supabaseRest.isEnabled()) {
+        alert('Supabase가 활성화되지 않았습니다.')
+        return
+      }
+
+      // Supabase DELETE API 호출 (여러 개 삭제)
+      const deletePromises = Array.from(selectedIds).map(id =>
+        supabaseRest.delete('reservations', `?id=eq.${id}`)
+      )
+
+      await Promise.all(deletePromises)
+
+      // State에서 제거
+      setReservations(reservations.filter(r => !selectedIds.has(r.id)))
+
+      // 삭제 모드 종료 및 선택 초기화
+      setDeleteMode(false)
+      setSelectedIds(new Set())
+
+      alert(`${selectedIds.size}개의 예약이 삭제되었습니다.`)
+    } catch (error) {
+      console.error('Failed to delete reservations:', error)
+      alert('예약 삭제 중 오류가 발생했습니다.')
+    }
+  }
+
   const openEdit = (res: Reservation) => {
     setEditing(res)
     setShowEditModal(true)
@@ -324,12 +365,43 @@ export default function ReservationManagement() {
             </div>
           </div>
           <div className="header-right">
-            <button 
-              onClick={() => setShowAddModal(true)}
-              className="action-btn primary"
-            >
-              + 새 예약 등록
-            </button>
+            {!deleteMode ? (
+              <>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="action-btn primary"
+                >
+                  + 새 예약 등록
+                </button>
+                <button
+                  onClick={() => setDeleteMode(true)}
+                  className="action-btn danger"
+                  style={{ marginLeft: 8 }}
+                >
+                  🗑️ 삭제 모드
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setDeleteMode(false)
+                    setSelectedIds(new Set())
+                  }}
+                  className="action-btn secondary"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  className="action-btn danger"
+                  style={{ marginLeft: 8 }}
+                  disabled={selectedIds.size === 0}
+                >
+                  선택 삭제 ({selectedIds.size})
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -370,30 +442,93 @@ export default function ReservationManagement() {
             </div>
           </div>
 
+          {/* 전체 선택 체크박스 (삭제 모드일 때만 표시) */}
+          {deleteMode && (
+            <div style={{
+              padding: '12px 20px',
+              background: '#fef3c7',
+              border: '1px solid #fcd34d',
+              borderRadius: 8,
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}>
+              <input
+                type="checkbox"
+                checked={selectedIds.size === filteredReservations.length && filteredReservations.length > 0}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedIds(new Set(filteredReservations.map(r => r.id)))
+                  } else {
+                    setSelectedIds(new Set())
+                  }
+                }}
+                style={{ width: 18, height: 18, cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 14, fontWeight: 500, color: '#92400e' }}>
+                전체 선택 ({selectedIds.size}/{filteredReservations.length})
+              </span>
+            </div>
+          )}
+
           {/* 예약 목록 */}
           <div className="reservation-list">
             {filteredReservations.map(reservation => (
-              <div key={reservation.id} className="reservation-card">
-                <div className="reservation-header">
-                  <div className="guest-info">
-                    <h3>
-                      {reservation.guestName}
-                      {reservation.charcoalReservationTime && (
-                        <span style={{
-                          marginLeft: 8,
-                          fontSize: 18,
-                          verticalAlign: 'middle'
-                        }}>
-                          🔥
-                        </span>
-                      )}
-                    </h3>
-                    <p>{reservation.phone}</p>
+              <div
+                key={reservation.id}
+                className="reservation-card"
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: deleteMode ? 12 : 0,
+                  border: selectedIds.has(reservation.id) ? '2px solid #ef4444' : '1px solid #e5e7eb'
+                }}
+              >
+                {deleteMode && (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(reservation.id)}
+                    onChange={(e) => {
+                      const newSelected = new Set(selectedIds)
+                      if (e.target.checked) {
+                        newSelected.add(reservation.id)
+                      } else {
+                        newSelected.delete(reservation.id)
+                      }
+                      setSelectedIds(newSelected)
+                    }}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      marginTop: 4,
+                      cursor: 'pointer',
+                      flexShrink: 0
+                    }}
+                  />
+                )}
+
+                <div style={{ flex: 1 }}>
+                  <div className="reservation-header">
+                    <div className="guest-info">
+                      <h3>
+                        {reservation.guestName}
+                        {reservation.charcoalReservationTime && (
+                          <span style={{
+                            marginLeft: 8,
+                            fontSize: 18,
+                            verticalAlign: 'middle'
+                          }}>
+                            🔥
+                          </span>
+                        )}
+                      </h3>
+                      <p>{reservation.phone}</p>
+                    </div>
+                    <div className="status-badge" style={{ backgroundColor: getStatusColor(reservation.status) }}>
+                      {getStatusText(reservation.status)}
+                    </div>
                   </div>
-                  <div className="status-badge" style={{ backgroundColor: getStatusColor(reservation.status) }}>
-                    {getStatusText(reservation.status)}
-                  </div>
-                </div>
                 
                 <div className="reservation-details">
                   <div className="detail-item">
@@ -456,39 +591,40 @@ export default function ReservationManagement() {
                   )}
                 </div>
 
-                <div className="reservation-actions">
-                  {reservation.status === 'confirmed' && (
-                    <button 
-                      onClick={() => handleUpdateStatus(reservation.id, 'checked-in')}
-                      className="action-btn secondary"
-                    >
-                      체크인 처리
-                    </button>
-                  )}
-                  {reservation.status === 'confirmed' && (
-                    <button 
-                      onClick={() => openEdit(reservation)}
-                      className="action-btn secondary"
-                    >
-                      정보 수정
-                    </button>
-                  )}
-                  {reservation.status === 'confirmed' && (
-                    <button 
-                      onClick={() => handleDeleteReservation(reservation.id)}
-                      className="action-btn danger"
-                    >
-                      삭제
-                    </button>
-                  )}
-                  {reservation.status === 'checked-in' && (
-                    <button 
-                      onClick={() => handleUpdateStatus(reservation.id, 'checked-out')}
-                      className="action-btn secondary"
-                    >
-                      체크아웃 처리
-                    </button>
-                  )}
+                  <div className="reservation-actions">
+                    {reservation.status === 'confirmed' && (
+                      <button
+                        onClick={() => handleUpdateStatus(reservation.id, 'checked-in')}
+                        className="action-btn secondary"
+                      >
+                        체크인 처리
+                      </button>
+                    )}
+                    {reservation.status === 'confirmed' && (
+                      <button
+                        onClick={() => openEdit(reservation)}
+                        className="action-btn secondary"
+                      >
+                        정보 수정
+                      </button>
+                    )}
+                    {reservation.status === 'confirmed' && (
+                      <button
+                        onClick={() => handleDeleteReservation(reservation.id)}
+                        className="action-btn danger"
+                      >
+                        삭제
+                      </button>
+                    )}
+                    {reservation.status === 'checked-in' && (
+                      <button
+                        onClick={() => handleUpdateStatus(reservation.id, 'checked-out')}
+                        className="action-btn secondary"
+                      >
+                        체크아웃 처리
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
