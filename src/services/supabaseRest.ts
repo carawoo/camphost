@@ -22,6 +22,12 @@ async function rest<T>(path: string, init?: RequestInit): Promise<T> {
     const text = await res.text()
     throw new Error(`Supabase REST error: ${res.status} ${text}`)
   }
+
+  // Handle 204 No Content (DELETE requests return empty body)
+  if (res.status === 204) {
+    return null as T
+  }
+
   return (await res.json()) as T
 }
 
