@@ -1,0 +1,161 @@
+@startuml CampHost Web Application Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' Level 3: Component Diagram - Web Application
+' ============================================================================
+'
+' Web Application (Next.js 14.2) 컨테이너 내부의 주요 컴포넌트를 표현합니다.
+' - UI 페이지들 (Super Admin, Admin, Kiosk, Landing)
+' - Custom Hooks (데이터 관리 로직)
+' - Service Layer (비즈니스 로직)
+' - 공유 컴포넌트 (재사용 가능한 UI)
+'
+' 🔗 이전 레벨: lv2-containers/overview.puml
+' 🔗 다음 레벨: lv4-code/webapp-*.puml (필요시)
+' ============================================================================
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram for CampHost Web Application
+
+' ============================================================================
+' Container Boundary: Web Application
+' ============================================================================
+
+Container_Boundary(webapp, "Web Application") {
+
+    ' ------------------------------------------------------------------------
+    ' UI Page Components
+    ' ------------------------------------------------------------------------
+
+    Component(superAdminUI, "Super Admin UI", "Next.js Page", "전체 캠핑장 관리 대시보드\n\n**경로:** /super-admin/dashboard\n\n**기능:**\n- 캠핑장 목록 조회\n- 캠핑장 추가/수정/삭제\n- 시스템 전체 통계\n\n🔗 app/super-admin/")
+
+    Component(adminUI, "Admin Dashboard UI", "Next.js Pages", "캠핑장 관리자 대시보드\n\n**주요 페이지:**\n- /admin/dashboard (대시보드)\n- /admin/reservations (예약 관리)\n- /admin/revenue (매출 현황)\n- /admin/rooms (객실 관리)\n- /admin/stats (통계)\n- /admin/inquiries (문의)\n- /admin/settings (설정)\n\n🔗 app/admin/")
+
+    Component(kioskUI, "Kiosk UI", "Next.js Page", "무인 체크인/체크아웃 인터페이스\n\n**경로:** /kiosk\n\n**기능:**\n- QR 코드 스캔\n- 체크인/체크아웃 처리\n- 알림 전송\n\n🔗 app/kiosk/")
+
+    Component(landingUI, "Landing Page", "Next.js Page", "서비스 소개 및 랜딩 페이지\n\n**경로:** /\n\n**구성 요소:**\n- Hero\n- Features\n- Demo (체크인 시연)\n- FAQ\n- Apply Section\n\n🔗 app/page.tsx\n🔗 components/")
+
+    ' ------------------------------------------------------------------------
+    ' Shared Components
+    ' ------------------------------------------------------------------------
+
+    Component(sharedComponents, "Shared Components", "React Components", "재사용 가능한 UI 컴포넌트\n\n**Common:**\n- QRCodeGenerator (QR 코드 생성)\n\n**Admin:**\n- 관리자 전용 컴포넌트\n\n**Kiosk:**\n- 키오스크 전용 컴포넌트\n\n🔗 src/components/common/\n🔗 src/components/admin/\n🔗 src/components/kiosk/")
+
+    ' ------------------------------------------------------------------------
+    ' Custom Hooks
+    ' ------------------------------------------------------------------------
+
+    Component(customHooks, "Custom Hooks", "React Hooks", "데이터 관리 및 상태 로직\n\n**Hooks:**\n- useCampgrounds (캠핑장 CRUD)\n- useReservations (예약 CRUD)\n- useAuth (인증/로그아웃)\n- useForm (폼 상태/검증)\n- useFilteredData (필터링/검색)\n- useLocalStorage (로컬 스토리지)\n\n🔗 src/hooks/index.ts")
+
+    ' ------------------------------------------------------------------------
+    ' Service Layer
+    ' ------------------------------------------------------------------------
+
+    Component(serviceLayer, "Service Layer", "TypeScript Classes", "비즈니스 로직 및 데이터 접근\n\n**Services:**\n- CampgroundService (캠핑장 관리)\n- ReservationService (예약 관리)\n- CampgroundServiceLegacy (레거시)\n\n**역할:**\n- localStorage CRUD\n- 데이터 검증\n- 비즈니스 규칙 적용\n\n🔗 lib/campgrounds.ts\n🔗 lib/reservations.ts\n🔗 lib/campground.ts")
+
+}
+
+' ============================================================================
+' External Systems & Storage
+' ============================================================================
+
+ContainerDb(localStorage, "Browser Storage", "localStorage", "오프라인 캐싱 및 세션 관리\n\n**저장 데이터:**\n- 캠핑장 목록\n- 예약 정보\n- 사용자 세션")
+
+Container(api, "REST API", "Next.js API Routes", "서버 사이드 비즈니스 로직\n\n**엔드포인트:**\n- POST /api/admin/login\n- POST /api/notify/checkin\n- GET/POST /api/dev/*")
+
+' ============================================================================
+' Relationships (관계)
+' ============================================================================
+
+' UI Pages → Custom Hooks
+Rel(superAdminUI, customHooks, "데이터 조회/수정", "useCampgrounds, useAuth")
+Rel(adminUI, customHooks, "예약/통계 조회", "useReservations, useCampgrounds, useFilteredData")
+Rel(kioskUI, customHooks, "체크인/체크아웃", "useReservations, useForm")
+Rel(landingUI, customHooks, "초기 데이터 로드", "useCampgrounds")
+
+' UI Pages → Shared Components
+Rel(adminUI, sharedComponents, "UI 재사용", "Admin Components")
+Rel(kioskUI, sharedComponents, "QR 스캔", "QRCodeGenerator, Kiosk Components")
+Rel(superAdminUI, sharedComponents, "공통 UI", "Common Components")
+
+' Custom Hooks → Service Layer
+Rel(customHooks, serviceLayer, "비즈니스 로직 호출", "CRUD operations")
+
+' Service Layer → Browser Storage
+Rel(serviceLayer, localStorage, "데이터 영속화", "localStorage.setItem()\nlocalStorage.getItem()")
+
+' Custom Hooks → Browser Storage
+Rel(customHooks, localStorage, "직접 접근", "useLocalStorage hook")
+
+' UI Pages → REST API
+Rel(adminUI, api, "인증/알림", "fetch API")
+Rel(kioskUI, api, "체크인 알림", "POST /api/notify/checkin")
+
+' ============================================================================
+' Notes
+' ============================================================================
+
+note right of customHooks
+  **주요 Hook 역할:**
+  - useCampgrounds: 캠핑장 CRUD + 상태 관리
+  - useReservations: 예약 CRUD + 상태 관리
+  - useAuth: 로그인/로그아웃 + 세션
+  - useForm: 폼 검증 + 에러 처리
+  - useFilteredData: 검색/필터링
+  - useLocalStorage: localStorage 추상화
+end note
+
+note right of serviceLayer
+  **Service Layer 패턴:**
+  - 데이터 접근 로직 캡슐화
+  - localStorage를 직접 사용
+  - UUID 기반 ID 생성
+  - 타입 안전성 보장
+
+  **향후 계획:**
+  - Supabase 마이그레이션 시
+    Service Layer만 수정
+end note
+
+note right of sharedComponents
+  **컴포넌트 분류:**
+  - Common: 전체 공통 (QR 코드 등)
+  - Admin: 관리자 전용
+  - Kiosk: 키오스크 전용
+
+  **재사용 원칙:**
+  - Props 기반 커스터마이징
+  - 타입 안전성 (TypeScript)
+end note
+
+' ============================================================================
+' 동기화 체크리스트
+' ============================================================================
+'
+' □ 새로운 페이지 추가 시
+'   - Component(...) 추가
+'   - 해당 페이지가 사용하는 Hook/Service 관계 명시 (Rel)
+'
+' □ Custom Hook 추가 시
+'   - customHooks 설명 업데이트
+'   - Service Layer와의 관계 확인
+'
+' □ Service 추가 시
+'   - serviceLayer 설명 업데이트
+'   - localStorage 관계 확인
+'
+' □ 공유 컴포넌트 추가 시
+'   - sharedComponents 설명 업데이트
+'   - 사용하는 페이지와의 관계 명시
+'
+' □ API 엔드포인트 추가 시
+'   - api Container 설명 업데이트
+'   - 호출하는 UI Component 관계 추가
+'
+' □ 주요 리팩토링 시
+'   - 컴포넌트 간 관계 재검토
+'   - 레이어 분리 원칙 확인
+'
+@enduml
