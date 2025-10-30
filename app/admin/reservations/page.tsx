@@ -697,7 +697,7 @@ export default function ReservationManagement() {
                     type="date"
                     value={newReservation.checkInDate}
                     onChange={(e) => setNewReservation({ ...newReservation, checkInDate: e.target.value })}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}
                   />
                 </div>
                 <div className="form-group">
@@ -706,7 +706,7 @@ export default function ReservationManagement() {
                     type="date"
                     value={newReservation.checkOutDate}
                     onChange={(e) => setNewReservation({ ...newReservation, checkOutDate: e.target.value })}
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}
                   />
                 </div>
                 <div className="form-group">
@@ -777,7 +777,7 @@ export default function ReservationManagement() {
                   type="date"
                   value={editing.checkInDate}
                   onChange={(e) => setEditing({ ...(editing as Reservation), checkInDate: e.target.value })}
-                  style={{ width: '100%' }}
+                  style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}
                 />
               </div>
               <div className="form-group">
@@ -786,7 +786,7 @@ export default function ReservationManagement() {
                   type="date"
                   value={editing.checkOutDate}
                   onChange={(e) => setEditing({ ...(editing as Reservation), checkOutDate: e.target.value })}
-                  style={{ width: '100%' }}
+                  style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}
                 />
               </div>
               <div className="form-group">
