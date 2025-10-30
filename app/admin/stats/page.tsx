@@ -42,23 +42,19 @@ export default function TodayStats() {
       if (!campgroundId || !supabaseRest.isEnabled()) return
       const today = fmt(new Date())
       try {
+        // 체크인: actual_checkin_time이 오늘인 것 (실제 체크인 시간 기준)
         const ciRows = await supabaseRest.select<any[]>(
           'reservations',
-          `?campground_id=eq.${campgroundId}&check_in_date=eq.${today}&status=eq.checked-in&select=id`
+          `?campground_id=eq.${campgroundId}&status=eq.checked-in&actual_checkin_time=gte.${today}T00:00:00Z&actual_checkin_time=lte.${today}T23:59:59Z&select=id`
         )
-        let coRows = await supabaseRest.select<any[]>(
+
+        // 체크아웃: actual_checkout_time이 오늘인 것 (실제 체크아웃 시간 기준)
+        const coRows = await supabaseRest.select<any[]>(
           'reservations',
-          `?campground_id=eq.${campgroundId}&check_out_date=eq.${today}&status=eq.checked-out&select=id`
+          `?campground_id=eq.${campgroundId}&status=eq.checked-out&actual_checkout_time=gte.${today}T00:00:00Z&actual_checkout_time=lte.${today}T23:59:59Z&select=id`
         )
-        // 일부 데이터는 check_out_date가 비어 있고 updated_at만 당일로 남을 수 있어 보완
-        if (!coRows || coRows.length === 0) {
-          try {
-            coRows = await supabaseRest.select<any[]>(
-              'reservations',
-              `?campground_id=eq.${campgroundId}&status=eq.checked-out&updated_at=gte.${today}T00:00:00Z&updated_at=lte.${today}T23:59:59Z&select=id`
-            )
-          } catch {}
-        }
+
+        // 신규 문의
         let iqRows: any[] = []
         try {
           iqRows = (await supabaseRest.select<any[]>(
@@ -66,8 +62,11 @@ export default function TodayStats() {
             `?campground_id=eq.${campgroundId}&created_at=gte.${today}T00:00:00Z&created_at=lte.${today}T23:59:59Z&status=eq.new&select=id`
           )) || []
         } catch {}
+
         setCounts({ checkins: (ciRows || []).length, checkouts: (coRows || []).length, inquiries: (iqRows || []).length })
-      } catch {}
+      } catch (error) {
+        console.error('[Stats] Failed to load today stats:', error)
+      }
     }
     load()
     if (timerRef.current) clearInterval(timerRef.current)
