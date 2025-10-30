@@ -8,7 +8,7 @@ import { Card, QRCodeGenerator } from '@/components/common'
 import { campgroundService } from '@/services'
 import { getCampgroundInfo } from '../../../lib/campground'
 
-type TabType = 'basic' | 'kiosk' | 'qrcode' | 'charcoal'
+type TabType = 'basic' | 'kiosk' | 'qrcode' | 'charcoal' | 'cache'
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState<TabType>('qrcode')
@@ -187,6 +187,18 @@ export default function AdminSettings() {
     setCharcoalTimeOptions(charcoalTimeOptions.filter((_, i) => i !== index))
   }
 
+  const handleClearCache = () => {
+    if (window.confirm('캐시를 삭제하시겠습니까? 저장된 캠핑장 정보가 초기화됩니다.')) {
+      try {
+        localStorage.removeItem('odoichon_campground_info')
+        showToast('캐시가 성공적으로 삭제되었습니다.', 'success')
+      } catch (error) {
+        console.error('Failed to clear cache:', error)
+        showToast('캐시 삭제 중 오류가 발생했습니다.', 'error')
+      }
+    }
+  }
+
   // 상태 체크: suspended, terminated만 접근 불가
   if (campgroundStatus && ['suspended', 'terminated'].includes(campgroundStatus)) {
     const statusMessages: Record<string, string> = {
@@ -302,6 +314,22 @@ export default function AdminSettings() {
                 }}
               >
                 🔥 숯불 예약 설정
+              </button>
+              <button
+                onClick={() => setActiveTab('cache')}
+                style={{
+                  padding: '12px 24px',
+                  background: activeTab === 'cache' ? '#2E3D31' : 'transparent',
+                  color: activeTab === 'cache' ? '#fff' : '#6b7280',
+                  border: 'none',
+                  borderRadius: '8px 8px 0 0',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === 'cache' ? 600 : 400,
+                  fontSize: 15,
+                  transition: 'all 0.2s'
+                }}
+              >
+                🗑️ 캐시 관리
               </button>
               <button
                 onClick={() => setActiveTab('basic')}
@@ -593,6 +621,55 @@ export default function AdminSettings() {
                         캠핑장 정보를 불러오는 중입니다...
                       </span>
                     )}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* 캐시 관리 탭 */}
+          {activeTab === 'cache' && (
+            <div className="management-section" style={{ maxWidth: 800 }}>
+              <Card title="캐시 관리">
+                <div className="space-y-3">
+                  <div style={{
+                    background: '#fef3c7',
+                    border: '1px solid #fcd34d',
+                    borderRadius: 12,
+                    padding: 20,
+                    marginBottom: 24
+                  }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 600, color: '#92400e', marginBottom: 12, margin: 0 }}>
+                      로컬 캐시란?
+                    </h3>
+                    <p style={{ fontSize: 14, color: '#92400e', lineHeight: 1.6, margin: 0 }}>
+                      브라우저에 저장된 캠핑장 정보 캐시입니다. 캐시를 삭제하면 저장된 캠핑장 데이터가 초기화되며,
+                      다음 페이지 로드 시 서버에서 최신 데이터를 다시 가져옵니다.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 8 }}>
+                      캐시 삭제
+                    </label>
+                    <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, lineHeight: 1.6 }}>
+                      다음과 같은 경우 캐시 삭제가 필요할 수 있습니다:
+                    </p>
+                    <ul style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.8, marginBottom: 20, paddingLeft: 20 }}>
+                      <li>캠핑장 정보가 올바르게 표시되지 않을 때</li>
+                      <li>데이터베이스에서 직접 정보를 수정한 후</li>
+                      <li>오래된 데이터로 인한 문제가 발생했을 때</li>
+                    </ul>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 24 }}>
+                    <button
+                      onClick={handleClearCache}
+                      className="action-btn danger"
+                      style={{ minWidth: 150 }}
+                    >
+                      🗑️ 로컬 캐시 삭제
+                    </button>
                   </div>
                 </div>
               </Card>

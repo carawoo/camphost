@@ -542,3 +542,182 @@ describe('AdminSettings - Charcoal Reservation Settings', () => {
     })
   })
 })
+
+describe('AdminSettings - Cache Management', () => {
+  const STORAGE_KEY = 'odoichon_campground_info'
+  const mockSupabaseData = {
+    id: 'campground-123',
+    name: 'Test Campground',
+    status: 'active',
+    description: 'Welcome to our campground',
+    guidelines: 'Rule 1\nRule 2',
+    address: '123 Camp St',
+    contact_phone: '010-1234-5678',
+    contact_email: 'info@camp.com',
+    enable_charcoal_reservation: true,
+    charcoal_time_options: ['오후 6시', '오후 7시', '오후 8시', '오후 9시'],
+  }
+
+  beforeEach(() => {
+    // Mock window.location.search
+    window.location.search = '?campground=Test Campground&id=campground-123'
+
+    // Reset all mocks
+    jest.clearAllMocks()
+    ;(supabaseRest.isEnabled as jest.Mock).mockReturnValue(true)
+    ;(supabaseRest.select as jest.Mock).mockResolvedValue([mockSupabaseData])
+
+    // Clear localStorage
+    localStorage.clear()
+  })
+
+  describe('Tab navigation', () => {
+    it('should display cache management tab content when clicked', async () => {
+      // Arrange
+      render(<AdminSettings />)
+
+      // Act
+      const cacheTab = await screen.findByText('🗑️ 캐시 관리')
+      fireEvent.click(cacheTab)
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText('캐시 관리')).toBeInTheDocument()
+        expect(screen.getByText('로컬 캐시란?')).toBeInTheDocument()
+        expect(screen.getByText('🗑️ 로컬 캐시 삭제')).toBeInTheDocument()
+      })
+    })
+
+    it('should show cache explanation text', async () => {
+      // Arrange
+      render(<AdminSettings />)
+
+      // Act
+      const cacheTab = await screen.findByText('🗑️ 캐시 관리')
+      fireEvent.click(cacheTab)
+
+      // Assert
+      await waitFor(() => {
+        expect(
+          screen.getByText(/브라우저에 저장된 캠핑장 정보 캐시입니다/i)
+        ).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('Cache clear button click (user confirms)', () => {
+    it('should clear localStorage when user confirms', async () => {
+      // Arrange
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ id: 'test', name: 'Test' }))
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true)
+      const removeItemSpy = jest.spyOn(Storage.prototype, 'removeItem')
+
+      render(<AdminSettings />)
+
+      // Act
+      const cacheTab = await screen.findByText('🗑️ 캐시 관리')
+      fireEvent.click(cacheTab)
+
+      const clearButton = await screen.findByText('🗑️ 로컬 캐시 삭제')
+      fireEvent.click(clearButton)
+
+      // Assert
+      await waitFor(() => {
+        expect(confirmSpy).toHaveBeenCalledWith(
+          '캐시를 삭제하시겠습니까? 저장된 캠핑장 정보가 초기화됩니다.'
+        )
+        expect(removeItemSpy).toHaveBeenCalledWith(STORAGE_KEY)
+      })
+
+      confirmSpy.mockRestore()
+      removeItemSpy.mockRestore()
+    })
+
+    it('should show success toast after clearing cache', async () => {
+      // Arrange
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ id: 'test', name: 'Test' }))
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true)
+
+      render(<AdminSettings />)
+
+      // Act
+      const cacheTab = await screen.findByText('🗑️ 캐시 관리')
+      fireEvent.click(cacheTab)
+
+      const clearButton = await screen.findByText('🗑️ 로컬 캐시 삭제')
+      fireEvent.click(clearButton)
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText('캐시가 성공적으로 삭제되었습니다.')).toBeInTheDocument()
+      })
+
+      confirmSpy.mockRestore()
+    })
+  })
+
+  describe('Cache clear button click (user cancels)', () => {
+    it('should not clear localStorage when user cancels', async () => {
+      // Arrange
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ id: 'test', name: 'Test' }))
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false)
+      const removeItemSpy = jest.spyOn(Storage.prototype, 'removeItem')
+
+      render(<AdminSettings />)
+
+      // Act
+      const cacheTab = await screen.findByText('🗑️ 캐시 관리')
+      fireEvent.click(cacheTab)
+
+      const clearButton = await screen.findByText('🗑️ 로컬 캐시 삭제')
+      fireEvent.click(clearButton)
+
+      // Assert
+      await waitFor(() => {
+        expect(confirmSpy).toHaveBeenCalled()
+        expect(removeItemSpy).not.toHaveBeenCalled()
+      })
+
+      // No toast should appear
+      expect(screen.queryByText('캐시가 성공적으로 삭제되었습니다.')).not.toBeInTheDocument()
+
+      confirmSpy.mockRestore()
+      removeItemSpy.mockRestore()
+    })
+  })
+
+  describe('Cache clear error', () => {
+    it('should show error toast when localStorage.removeItem throws error', async () => {
+      // Arrange
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true)
+      const removeItemSpy = jest
+        .spyOn(Storage.prototype, 'removeItem')
+        .mockImplementation(() => {
+          throw new Error('Storage access denied')
+        })
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+      render(<AdminSettings />)
+
+      // Act
+      const cacheTab = await screen.findByText('🗑️ 캐시 관리')
+      fireEvent.click(cacheTab)
+
+      const clearButton = await screen.findByText('🗑️ 로컬 캐시 삭제')
+      fireEvent.click(clearButton)
+
+      // Assert
+      await waitFor(() => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'Failed to clear cache:',
+          expect.any(Error)
+        )
+        expect(screen.getByText('캐시 삭제 중 오류가 발생했습니다.')).toBeInTheDocument()
+      })
+
+      confirmSpy.mockRestore()
+      removeItemSpy.mockRestore()
+      consoleErrorSpy.mockRestore()
+    })
+  })
+})

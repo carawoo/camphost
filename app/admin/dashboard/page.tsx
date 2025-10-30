@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import '../admin.css'
-import { getCampgroundInfo, updateCampgroundInfo, type CampgroundInfo } from '../../../lib/campground'
+import { getCampgroundInfo, updateCampgroundInfo, validateAndGetCampgroundInfo, type CampgroundInfo } from '../../../lib/campground'
 import { campgroundService } from '@/services'
 import { supabaseRest, type SupabaseCampground } from '@/services/supabaseRest'
 
@@ -88,14 +88,16 @@ export default function AdminDashboard() {
           setCampgroundId(fromService.id)
           setCampgroundName(fromService.name)
         } else {
-          // 기존 로컬 저장소 폴백
-          const info = getCampgroundInfo()
+          // 검증된 로컬 저장소 폴백 (DB 검증 포함)
+          const info = await validateAndGetCampgroundInfo()
           setCampgroundInfo(info)
           setEditCampgroundInfo(info)
           if (info?.name) setCampgroundName(info.name)
         }
-      } catch {
-        const info = getCampgroundInfo()
+      } catch (error) {
+        console.error('Dashboard initialization error:', error)
+        // 에러 발생 시에도 검증된 localStorage 사용
+        const info = await validateAndGetCampgroundInfo()
         setCampgroundInfo(info)
         setEditCampgroundInfo(info)
       }
