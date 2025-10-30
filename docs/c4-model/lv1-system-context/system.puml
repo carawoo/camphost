@@ -6,10 +6,10 @@
 ' ============================================================================
 '
 ' CampHost 시스템의 전체 컨텍스트를 표현합니다.
-' - 주요 사용자 (Actors)
-' - 시스템 (CampHost)
+' - 주요 사용자 (Actors): Super Admin, Campground Admin, Camper
+' - 시스템 (CampHost): 캠핑장 무인 운영 자동화 플랫폼
 ' - 외부 시스템 (Supabase, Resend)
-' - 사용자-시스템 간 관계
+' - 사용자-시스템 간 상호작용
 '
 ' 🔗 다음 레벨: lv2-containers/overview.puml
 ' ============================================================================
@@ -22,44 +22,44 @@ title System Context Diagram for CampHost
 ' Actors (사용자)
 ' ============================================================================
 
-Person(superAdmin, "Super Admin", "시스템 전체 관리자\n- 캠핑장 CRUD\n- 시스템 모니터링\n- QR 코드 생성")
+Person(superAdmin, "Super Admin", "시스템 전체 관리자\n\n**주요 활동:**\n- 캠핑장 CRUD (생성/조회/수정/삭제)\n- 시스템 전체 모니터링\n- QR 코드 생성 및 배포\n- 개발 도구 사용")
 
-Person(campgroundAdmin, "Campground Admin", "캠핑장 사장님\n- 예약 관리\n- 매출 확인\n- 설정 관리")
+Person(campgroundAdmin, "Campground Admin", "캠핑장 사장님\n\n**주요 활동:**\n- 예약 조회/수정/삭제\n- 매출 통계 확인\n- 문의 관리 및 응답\n- 캠핑장 설정 관리")
 
-Person(camper, "Camper", "캠핑 고객\n- 무인 체크인/체크아웃\n- 문의 작성")
+Person(camper, "Camper", "캠핑 고객\n\n**주요 활동:**\n- QR 코드 스캔 체크인/체크아웃\n- 예약 정보 조회\n- 문의 작성")
 
 ' ============================================================================
 ' System (CampHost)
 ' ============================================================================
 
-System(camphost, "CampHost", "캠핑장 무인 운영 자동화 시스템\n\n**기능:**\n- 무인 체크인/체크아웃\n- 예약 관리\n- QR 코드 생성\n- 매출 통계\n\n**기술 스택:**\n- Next.js 14.2\n- React 18.3\n- TypeScript 5.4")
+System(camphost, "CampHost", "캠핑장 무인 운영 자동화 플랫폼\n\n**핵심 기능:**\n- 무인 체크인/체크아웃 자동화\n- 예약 관리 및 매출 통계\n- QR 코드 기반 인증\n- 이메일 알림 (체크인, 문의 응답)\n- 오프라인 지원 (localStorage)\n\n**기술 스택:**\n- Next.js 14.2 (App Router)\n- React 18.3\n- TypeScript 5.4\n- Supabase (PostgreSQL)\n- Resend (Email)\n\n**아키텍처:**\n- SSR/SSG/CSR 하이브리드\n- REST API (Next.js API Routes)\n- Browser Storage (localStorage fallback)")
 
 ' ============================================================================
 ' External Systems (외부 시스템)
 ' ============================================================================
 
-System_Ext(supabase, "Supabase", "PostgreSQL 데이터베이스\n\n**역할:**\n- 캠핑장 정보 저장 (campgrounds)\n- 예약 정보 저장 (reservations)\n- 문의 정보 저장 (inquiries)\n- 대시보드 메트릭 뷰\n\n**접근 방식:**\n- REST API\n- Row Level Security (RLS)")
+System_Ext(supabase, "Supabase", "PostgreSQL 데이터베이스 서비스\n\n**역할:**\n- 캠핑장 정보 저장 (campgrounds)\n- 예약 정보 저장 (reservations)\n- 문의 정보 저장 (inquiries)\n- 대시보드 메트릭 뷰 (dashboard_metrics)\n\n**접근 방식:**\n- REST API (Supabase Client)\n- Row Level Security (RLS)\n\n**폴백 전략:**\n- localStorage (오프라인 모드)\n- 네트워크 장애 시 로컬 캐시 사용")
 
-System_Ext(resend, "Resend", "이메일 발송 서비스\n\n**역할:**\n- 체크인 알림 이메일\n- 관리자 알림\n\n**API:**\n- REST API")
+System_Ext(resend, "Resend", "이메일 발송 서비스\n\n**역할:**\n- 체크인 알림 이메일 (Plain text)\n- 비밀번호 재설정 이메일 (HTML)\n- 회원정보 문의 이메일 (HTML)\n\n**API:**\n- REST API (POST /emails)\n- 템플릿 기반 발송")
 
 ' ============================================================================
 ' Relationships (관계)
 ' ============================================================================
 
 ' Super Admin → CampHost
-Rel(superAdmin, camphost, "캠핑장 관리", "HTTPS\n- 캠핑장 CRUD\n- 시스템 모니터링\n- QR 코드 생성")
+Rel(superAdmin, camphost, "캠핑장 관리 및 시스템 모니터링", "HTTPS (브라우저)\n\n**주요 기능:**\n- 캠핑장 CRUD\n- QR 코드 생성\n- 개발 도구 사용\n\n**주요 페이지:**\n- /super-admin/dashboard")
 
 ' Campground Admin → CampHost
-Rel(campgroundAdmin, camphost, "예약 관리", "HTTPS\n- 예약 조회/수정\n- 매출 확인\n- 문의 응답")
+Rel(campgroundAdmin, camphost, "예약 관리 및 통계 확인", "HTTPS (브라우저)\n\n**주요 기능:**\n- 예약 조회/수정/삭제\n- 매출 통계 확인\n- 문의 관리\n- 설정 변경\n\n**주요 페이지:**\n- /admin/dashboard\n- /admin/reservations\n- /admin/revenue\n- /admin/inquiries\n- /admin/settings")
 
 ' Camper → CampHost
-Rel(camper, camphost, "체크인/체크아웃", "HTTPS\n- 예약 검색\n- 체크인/체크아웃\n- 문의 작성")
+Rel(camper, camphost, "체크인/체크아웃 및 문의", "HTTPS (브라우저)\n\n**주요 기능:**\n- QR 코드 스캔\n- 예약 검색\n- 체크인/체크아웃 처리\n- 문의 작성\n\n**주요 페이지:**\n- /kiosk\n- / (랜딩 페이지)")
 
 ' CampHost → Supabase
-Rel(camphost, supabase, "데이터 읽기/쓰기", "REST API\n- SELECT\n- INSERT\n- UPDATE\n- DELETE")
+Rel(camphost, supabase, "데이터 CRUD 작업", "REST API\n\n**주요 작업:**\n- SELECT (조회)\n- INSERT (생성)\n- UPDATE (수정)\n- DELETE (삭제)\n\n**테이블:**\n- campgrounds\n- reservations\n- inquiries\n- dashboard_metrics (view)")
 
 ' CampHost → Resend
-Rel(camphost, resend, "알림 이메일 발송", "REST API\n- 체크인 알림\n- 관리자 알림")
+Rel(camphost, resend, "알림 이메일 발송", "REST API (POST /emails)\n\n**이메일 종류:**\n- 체크인 알림 (Plain text)\n  → 캠핑장 사장님에게 발송\n- 비밀번호 재설정 (HTML)\n  → 관리자 문의 접수\n- 회원정보 문의 (HTML)\n  → 관리자 문의 접수")
 
 ' ============================================================================
 ' Notes
@@ -67,18 +67,60 @@ Rel(camphost, resend, "알림 이메일 발송", "REST API\n- 체크인 알림\n
 
 note right of camphost
   **주요 페이지:**
-  - / (랜딩)
-  - /super-admin/dashboard
-  - /admin/*
-  - /kiosk
+  - / (랜딩 페이지)
+  - /super-admin/dashboard (전체 관리)
+  - /admin/* (캠핑장 관리)
+  - /kiosk (무인 체크인/체크아웃)
+
+  **아키텍처 특징:**
+  - Next.js App Router
+  - SSR (Server-Side Rendering)
+  - SSG (Static Site Generation)
+  - CSR (Client-Side Rendering)
+  - localStorage fallback (오프라인)
+
+  **주요 컨테이너:**
+  - Web Application (Next.js)
+  - REST API (API Routes)
+  - Browser Storage (localStorage)
 end note
 
 note right of supabase
   **주요 테이블:**
-  - campgrounds
-  - reservations
-  - inquiries
-  - dashboard_metrics (view)
+  - campgrounds (캠핑장 정보)
+    → id, name, address, status, password
+  - reservations (예약 정보)
+    → id, campground_id, guest_name, room_number
+  - inquiries (문의 정보)
+    → id, campground_id, content, status
+  - dashboard_metrics (뷰)
+    → 통계 데이터 집계
+
+  **보안:**
+  - Row Level Security (RLS)
+  - API Key 인증
+
+  **폴백 전략:**
+  - 네트워크 장애 시 localStorage 사용
+  - 캠핑장/예약 정보 로컬 캐싱
+end note
+
+note right of resend
+  **이메일 템플릿:**
+  - 체크인 알림 (Plain text)
+    → 캠핑장명, 고객명, 연락처, 객실, 날짜
+  - 비밀번호 재설정 (HTML)
+    → 캠핑장명, 관리자명, 연락처
+  - 회원정보 문의 (HTML)
+    → 캠핑장명, 관리자명, 연락처
+
+  **수신자:**
+  - NOTIFY_EMAIL 환경 변수
+  - 기본값: odoichon@odoichon.com
+
+  **에러 처리:**
+  - 발송 실패 시 콘솔 로그
+  - 사용자에게 에러 메시지 표시
 end note
 
 ' ============================================================================
@@ -88,12 +130,29 @@ end note
 ' □ 새로운 외부 시스템 추가 시
 '   - System_Ext(...) 추가
 '   - Rel(camphost, 외부시스템, ...) 추가
+'   - Notes 섹션에 설명 추가
+'   - Level 2 (lv2-containers/overview.puml) 동기화 확인
 '
 ' □ 사용자 역할 변경 시
 '   - Person(...) 설명 업데이트
 '   - Rel(사용자, camphost, ...) 업데이트
+'   - 주요 활동 목록 수정
 '
 ' □ 시스템 기능 추가 시
 '   - System(camphost, ...) 설명 업데이트
+'   - 핵심 기능 목록 추가
+'   - Notes 섹션에 주요 페이지 추가
+'   - Level 2 (lv2-containers/overview.puml) 동기화 확인
+'
+' □ 기술 스택 변경 시
+'   - System(camphost, ...) 기술 스택 업데이트
+'   - Level 2 (lv2-containers/overview.puml) Container 설명 업데이트
+'
+' □ 외부 시스템 통합 변경 시
+'   - System_Ext(...) 설명 업데이트
+'   - Rel(camphost, 외부시스템, ...) 관계 수정
+'   - Notes 섹션 업데이트
+'
+' ============================================================================
 
 @enduml
