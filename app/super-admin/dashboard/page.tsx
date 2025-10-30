@@ -111,9 +111,13 @@ export default function SuperAdminDashboard() {
             id: r.id, // Supabase UUID 사용
             name: r.name,
             owner: {
+              id: `owner-${r.id}`,
               name: r.owner_name || '',
               email: r.owner_email || '',
-              phone: r.contact_phone || ''
+              phone: r.contact_phone || '',
+              role: 'campground_owner' as const,
+              createdAt: r.created_at || new Date().toISOString(),
+              updatedAt: r.updated_at || new Date().toISOString()
             },
             contactInfo: {
               phone: r.contact_phone || '',
