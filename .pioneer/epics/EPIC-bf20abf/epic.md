@@ -1,16 +1,16 @@
 ---
-id: EPIC-4ec9a2f
-title: 실제 체크인/체크아웃 시간 타임스탬프 기록 및 표시
+id: EPIC-bf20abf
+title: 프로젝트 코드 정리 및 리팩토링
 type: epic
-status: DONE
+status: TODO
 priority: high
-created: 2025-10-30T08:51:52Z
-updated: 2025-10-30T08:54:34Z
+created: 2025-10-30T08:54:55Z
+updated: 2025-10-30T08:54:55Z
 branch: ""
 pr_url: ""
 ---
 
-# Epic: 실제 체크인/체크아웃 시간 타임스탬프 기록 및 표시
+# Epic: 프로젝트 코드 정리 및 리팩토링
 
 ## Description
 
