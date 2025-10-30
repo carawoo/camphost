@@ -13,6 +13,7 @@ import { campgroundService } from '@/services'
 import { supabaseRest, type SupabaseCampground } from '@/services/supabaseRest'
 
 export default function CheckInKiosk() {
+  const [mode, setMode] = useState<'checkin' | 'checkout'>('checkin')
   const [step, setStep] = useState<'search' | 'confirm' | 'success' | 'error'>('search')
   const [searchForm, setSearchForm] = useState({
     guestName: '',
@@ -24,6 +25,7 @@ export default function CheckInKiosk() {
   const [guidelines, setGuidelines] = useState<string>('')
   const [campgroundId, setCampgroundId] = useState<string | null>(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [campgroundStatus, setCampgroundStatus] = useState<string>('')
 
   // 캠핑장 정보 로드 (Supabase 우선, 폴백은 로컬)
   useEffect(() => {
@@ -39,6 +41,11 @@ export default function CheckInKiosk() {
           const rows = await supabaseRest.select<SupabaseCampground[]>('campgrounds', query)
           const row = rows && rows[0]
           if (row) {
+            setCampgroundStatus(row.status || 'active')
+            // 상태 체크: pending, suspended, terminated는 접근 불가
+            if (row.status && ['pending', 'suspended', 'terminated'].includes(row.status)) {
+              return
+            }
             setCampgroundInfo({
               id: row.id,
               name: row.name,
@@ -54,6 +61,11 @@ export default function CheckInKiosk() {
           // fallback below
           const target = campgroundService.getAll().find(c => c.name === name)
           if (target) {
+            setCampgroundStatus(target.status || 'active')
+            // 상태 체크: pending, suspended, terminated는 접근 불가
+            if (target.status && ['pending', 'suspended', 'terminated'].includes(target.status)) {
+              return
+            }
             setCampgroundInfo({
               id: target.id,
               name: target.name,
@@ -74,6 +86,11 @@ export default function CheckInKiosk() {
       if (name) {
         const target = campgroundService.getAll().find(c => c.name === name)
         if (target) {
+          setCampgroundStatus(target.status || 'active')
+          // 상태 체크: pending, suspended, terminated는 접근 불가
+          if (target.status && ['pending', 'suspended', 'terminated'].includes(target.status)) {
+            return
+          }
           const mapped: CampgroundInfo = {
             id: target.id,
             name: target.name,
@@ -231,16 +248,34 @@ export default function CheckInKiosk() {
       return
     }
 
-    if (reservation.status === 'checked-in') {
-      setErrorMessage('이미 체크인 완료된 예약입니다.')
-      setStep('error')
-      return
+    // 체크인 모드일 때
+    if (mode === 'checkin') {
+      if (reservation.status === 'checked-in') {
+        setErrorMessage('이미 체크인 완료된 예약입니다.')
+        setStep('error')
+        return
+      }
+
+      if (reservation.status === 'checked-out') {
+        setErrorMessage('체크아웃 완료된 예약입니다.')
+        setStep('error')
+        return
+      }
     }
 
-    if (reservation.status === 'checked-out') {
-      setErrorMessage('체크아웃 완료된 예약입니다.')
-      setStep('error')
-      return
+    // 체크아웃 모드일 때
+    if (mode === 'checkout') {
+      if (reservation.status === 'confirmed') {
+        setErrorMessage('아직 체크인하지 않은 예약입니다.')
+        setStep('error')
+        return
+      }
+
+      if (reservation.status === 'checked-out') {
+        setErrorMessage('이미 체크아웃 완료된 예약입니다.')
+        setStep('error')
+        return
+      }
     }
 
     // 체크인 날짜 확인 (체크인일 <= 오늘 <= 체크아웃일 인 경우 허용)
@@ -310,6 +345,31 @@ export default function CheckInKiosk() {
     }
   }
 
+  const handleCheckOut = async () => {
+    if (!foundReservation) return
+
+    try {
+      // 예약 상태를 'checked-out'으로 업데이트 (Supabase 우선)
+      const urlParams = new URLSearchParams(window.location.search)
+      const name = urlParams.get('campground') || undefined
+      let updated = false
+      try {
+        if (name && supabaseRest.isEnabled()) {
+          await (supabaseRest as any).update('reservations', { status: 'checked-out', updated_at: new Date().toISOString() }, `?id=eq.${foundReservation.id}`)
+          updated = true
+        }
+      } catch {}
+      if (!updated) {
+        updateReservationStatus(foundReservation.id, 'checked-out')
+      }
+      setStep('success')
+      setShowSuccessModal(false)
+    } catch (error) {
+      setErrorMessage('체크아웃 처리 중 오류가 발생했습니다. 관리자에게 문의해주세요.')
+      setStep('error')
+    }
+  }
+
   const resetForm = () => {
     setStep('search')
     setSearchForm({ guestName: '', phone: '' })
@@ -323,6 +383,68 @@ export default function CheckInKiosk() {
       month: 'long',
       day: 'numeric'
     })
+  }
+
+  // 상태 체크: pending, suspended, terminated는 접근 불가
+  if (campgroundStatus && ['pending', 'suspended', 'terminated'].includes(campgroundStatus)) {
+    const statusMessages = {
+      pending: '대기 중인 캠핑장입니다.',
+      suspended: '일시정지된 캠핑장입니다.',
+      terminated: '계약이 해지된 캠핑장입니다.'
+    }
+    return (
+      <div className="kiosk-page">
+        <div className="kiosk-container">
+          <div className="kiosk-header">
+            <span className="kiosk-logo-icon">🏕️</span>
+            <h1>{campgroundInfo?.name || '캠핑장'}</h1>
+            <span className="kiosk-subtitle">무인 체크인 키오스크</span>
+          </div>
+
+          <div className="kiosk-step-indicator">
+            <div className="step active">1</div>
+            <div className="step-divider"></div>
+            <div className="step">2</div>
+            <div className="step-divider"></div>
+            <div className="step">3</div>
+          </div>
+
+          <div className="kiosk-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+            <div style={{ textAlign: 'center', padding: 40, maxWidth: 500 }}>
+              <div style={{ fontSize: 80, marginBottom: 24 }}>❌</div>
+              <h2 style={{ fontSize: 28, marginBottom: 16, color: '#ef4444', fontWeight: 700 }}>체크인 실패</h2>
+              <p style={{ fontSize: 18, color: '#6b7280', lineHeight: 1.6, marginBottom: 32 }}>
+                {statusMessages[campgroundStatus as keyof typeof statusMessages]}<br/>
+                이용이 불가능합니다. 관리자에게 문의해주세요.
+              </p>
+              <button
+                onClick={() => window.location.href = '/'}
+                style={{
+                  padding: '16px 32px',
+                  background: '#2E3D31',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 12,
+                  fontSize: 18,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                다시 시도
+              </button>
+            </div>
+          </div>
+
+          <div className="kiosk-footer">
+            <p>문제가 있으신가요? 관리자에게 문의해주세요</p>
+            <div className="contact-info">
+              <span>📞 문의: {campgroundInfo?.contactPhone || '010-2592-3007'}</span>
+              <span>📧 이메일: {campgroundInfo?.contactEmail || 'carawoo96@gmail.com'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -344,9 +466,47 @@ export default function CheckInKiosk() {
                 <div className="step-line"></div>
                 <div className="step">3</div>
               </div>
-              
+
               <div className="form-container">
-                <h3>예약 정보 입력</h3>
+                {/* 체크인/체크아웃 모드 선택 */}
+                <div style={{ display: 'flex', gap: 12, marginBottom: 24, justifyContent: 'center' }}>
+                  <button
+                    onClick={() => setMode('checkin')}
+                    style={{
+                      flex: 1,
+                      padding: '16px 24px',
+                      background: mode === 'checkin' ? '#2E3D31' : '#f3f4f6',
+                      color: mode === 'checkin' ? '#fff' : '#6b7280',
+                      border: mode === 'checkin' ? '2px solid #2E3D31' : '2px solid #e5e7eb',
+                      borderRadius: 12,
+                      fontSize: 16,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    📥 체크인
+                  </button>
+                  <button
+                    onClick={() => setMode('checkout')}
+                    style={{
+                      flex: 1,
+                      padding: '16px 24px',
+                      background: mode === 'checkout' ? '#2E3D31' : '#f3f4f6',
+                      color: mode === 'checkout' ? '#fff' : '#6b7280',
+                      border: mode === 'checkout' ? '2px solid #2E3D31' : '2px solid #e5e7eb',
+                      borderRadius: 12,
+                      fontSize: 16,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    📤 체크아웃
+                  </button>
+                </div>
+
+                <h3>{mode === 'checkin' ? '체크인 정보 입력' : '체크아웃 정보 입력'}</h3>
                 <div className="form-group">
                   <label>예약자 이름</label>
                   <input
@@ -356,7 +516,7 @@ export default function CheckInKiosk() {
                     placeholder="예약자 이름을 입력하세요"
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label>연락처</label>
                   <input
@@ -368,7 +528,7 @@ export default function CheckInKiosk() {
                 </div>
 
                 <button onClick={handleSearch} className="checkin-btn">
-                  예약 확인
+                  {mode === 'checkin' ? '예약 확인' : '체크아웃 확인'}
                 </button>
               </div>
             </div>
@@ -385,7 +545,7 @@ export default function CheckInKiosk() {
               </div>
 
               <div className="form-container">
-                <h3>예약 정보 확인</h3>
+                <h3>{mode === 'checkin' ? '체크인 정보 확인' : '체크아웃 정보 확인'}</h3>
                 <div className="confirm-info">
                   <div className="info-item">
                     <span className="label">예약자</span>
@@ -417,8 +577,11 @@ export default function CheckInKiosk() {
                   <button onClick={resetForm} className="confirm-btn secondary">
                     다시 입력
                   </button>
-                  <button onClick={handleCheckIn} className="confirm-btn primary">
-                    체크인 완료
+                  <button
+                    onClick={mode === 'checkin' ? handleCheckIn : handleCheckOut}
+                    className="confirm-btn primary"
+                  >
+                    {mode === 'checkin' ? '체크인 완료' : '체크아웃 완료'}
                   </button>
                 </div>
               </div>
@@ -437,16 +600,27 @@ export default function CheckInKiosk() {
 
               <div className="form-container">
                 <span className="result-icon">✅</span>
-                <h3 className="result-title">체크인 완료!</h3>
+                <h3 className="result-title">{mode === 'checkin' ? '체크인 완료!' : '체크아웃 완료!'}</h3>
                 <p className="result-message">
-                  체크인이 성공적으로 완료되었습니다.<br />
-                  즐거운 캠핑 되세요!
+                  {mode === 'checkin' ? (
+                    <>
+                      체크인이 성공적으로 완료되었습니다.<br />
+                      즐거운 캠핑 되세요!
+                    </>
+                  ) : (
+                    <>
+                      체크아웃이 성공적으로 완료되었습니다.<br />
+                      이용해 주셔서 감사합니다!
+                    </>
+                  )}
                 </p>
                 {/* 캠핑장 안내/사장님 메시지 */}
-                <button onClick={() => setShowSuccessModal(true)} className="result-btn primary" style={{ marginBottom: 12 }}>체크인 정보 보기</button>
+                {mode === 'checkin' && (
+                  <button onClick={() => setShowSuccessModal(true)} className="result-btn primary" style={{ marginBottom: 12 }}>체크인 정보 보기</button>
+                )}
                 <div className="result-actions">
                   <button onClick={resetForm} className="result-btn secondary">
-                    새 체크인
+                    {mode === 'checkin' ? '새 체크인' : '새 체크아웃'}
                   </button>
                 </div>
               </div>
@@ -527,12 +701,8 @@ export default function CheckInKiosk() {
 
         <div className="kiosk-footer">
           <p>문제가 있으시면 관리자에게 문의해주세요</p>
-          {campgroundInfo?.contactPhone && (
-            <p>📞 문의: {campgroundInfo.contactPhone}</p>
-          )}
-          {campgroundInfo?.contactEmail && (
-            <p>📧 이메일: {campgroundInfo.contactEmail}</p>
-          )}
+          <p>📞 문의: {campgroundInfo?.contactPhone || '010-2592-3007'}</p>
+          <p>📧 이메일: {campgroundInfo?.contactEmail || 'carawoo96@gmail.com'}</p>
         </div>
       </div>
     </div>

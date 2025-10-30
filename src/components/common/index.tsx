@@ -1,6 +1,9 @@
 import React from 'react'
 import { BaseComponentProps, ModalProps, TableColumn } from '@/types'
 
+// QR 코드 생성 컴포넌트 export
+export { default as QRCodeGenerator } from './QRCodeGenerator'
+
 // 기본 버튼 컴포넌트
 interface ButtonProps extends BaseComponentProps {
   variant?: 'primary' | 'secondary' | 'danger' | 'success'

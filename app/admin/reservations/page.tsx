@@ -99,10 +99,14 @@ export default function ReservationManagement() {
   )
 
   const handleAddReservation = async () => {
-    if (!newReservation.guestName || !newReservation.phone || !newReservation.checkInDate || !newReservation.checkOutDate) {
-      alert('모든 필수 항목을 입력해주세요.')
+    if (!newReservation.guestName || !newReservation.phone || !newReservation.checkInDate) {
+      alert('고객명, 연락처, 체크인 날짜는 필수입니다.')
       return
     }
+
+    // 체크아웃 날짜가 없으면 체크인 다음날로 자동 설정
+    const checkOutDate = newReservation.checkOutDate ||
+      new Date(new Date(newReservation.checkInDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
     try {
       if (supabaseRest.isEnabled() && campgroundId) {
@@ -112,7 +116,7 @@ export default function ReservationManagement() {
           phone: newReservation.phone,
           room_number: newReservation.roomNumber || null,
           check_in_date: newReservation.checkInDate,
-          check_out_date: newReservation.checkOutDate,
+          check_out_date: checkOutDate,
           guests: newReservation.guests,
           total_amount: newReservation.totalAmount,
           status: 'confirmed'
@@ -222,6 +226,11 @@ export default function ReservationManagement() {
 
   const handleUpdateReservationFields = async () => {
     if (!editing) return
+
+    // 체크아웃 날짜가 없으면 체크인 다음날로 자동 설정
+    const checkOutDate = editing.checkOutDate ||
+      new Date(new Date(editing.checkInDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
     try {
       if (supabaseRest.isEnabled()) {
         await supabaseRest.update('reservations', {
@@ -229,7 +238,7 @@ export default function ReservationManagement() {
           phone: editing.phone,
           room_number: editing.roomNumber || null,
           check_in_date: editing.checkInDate,
-          check_out_date: editing.checkOutDate,
+          check_out_date: checkOutDate,
           guests: editing.guests,
           total_amount: editing.totalAmount
         }, `?id=eq.${editing.id}`)
@@ -442,9 +451,9 @@ export default function ReservationManagement() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>객실번호</label>
-                  <input 
-                    type="text" 
+                  <label>객실번호 <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 400 }}>(선택)</span></label>
+                  <input
+                    type="text"
                     value={newReservation.roomNumber}
                     onChange={(e) => setNewReservation({ ...newReservation, roomNumber: e.target.value })}
                     placeholder="예) A동-101"
@@ -459,9 +468,9 @@ export default function ReservationManagement() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>체크아웃 날짜 *</label>
-                  <input 
-                    type="date" 
+                  <label>체크아웃 날짜 <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 400 }}>(선택, 미입력 시 체크인 다음날)</span></label>
+                  <input
+                    type="date"
                     value={newReservation.checkOutDate}
                     onChange={(e) => setNewReservation({ ...newReservation, checkOutDate: e.target.value })}
                   />
@@ -477,12 +486,13 @@ export default function ReservationManagement() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>총 금액 (원)</label>
-                  <input 
-                    type="number" 
+                  <label>총 금액 (원) <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 400 }}>(선택)</span></label>
+                  <input
+                    type="number"
                     min="0"
                     value={newReservation.totalAmount}
                     onChange={(e) => setNewReservation({ ...newReservation, totalAmount: parseInt(e.target.value) })}
+                    placeholder="0"
                   />
                 </div>
                 <div className="modal-actions">
@@ -520,9 +530,9 @@ export default function ReservationManagement() {
                 />
               </div>
               <div className="form-group">
-                <label>객실번호</label>
-                <input 
-                  type="text" 
+                <label>객실번호 <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 400 }}>(선택)</span></label>
+                <input
+                  type="text"
                   value={editing.roomNumber || ''}
                   onChange={(e) => setEditing({ ...(editing as Reservation), roomNumber: e.target.value })}
                 />
@@ -536,9 +546,9 @@ export default function ReservationManagement() {
                 />
               </div>
               <div className="form-group">
-                <label>체크아웃 날짜 *</label>
-                <input 
-                  type="date" 
+                <label>체크아웃 날짜 <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 400 }}>(선택)</span></label>
+                <input
+                  type="date"
                   value={editing.checkOutDate}
                   onChange={(e) => setEditing({ ...(editing as Reservation), checkOutDate: e.target.value })}
                 />
@@ -554,9 +564,9 @@ export default function ReservationManagement() {
                 />
               </div>
               <div className="form-group">
-                <label>총 금액 (원)</label>
-                <input 
-                  type="number" 
+                <label>총 금액 (원) <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 400 }}>(선택)</span></label>
+                <input
+                  type="number"
                   min="0"
                   value={editing.totalAmount}
                   onChange={(e) => setEditing({ ...(editing as Reservation), totalAmount: parseInt(e.target.value) || 0 })}

@@ -14,13 +14,14 @@ import {
   ERROR_MESSAGES,
   SUCCESS_MESSAGES 
 } from '@/constants'
-import { 
-  Button, 
-  Input, 
-  Modal, 
-  Card, 
-  StatusBadge, 
-  Spinner 
+import {
+  Button,
+  Input,
+  Modal,
+  Card,
+  StatusBadge,
+  Spinner,
+  QRCodeGenerator
 } from '@/components/common'
 import { Campground, FilterOptions } from '@/types'
 import '../super-admin.css'
@@ -47,6 +48,8 @@ export default function SuperAdminDashboard() {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordCampground, setPasswordCampground] = useState<{ id: string; name: string; currentPassword: string } | null>(null)
   const [newPassword, setNewPassword] = useState('')
+  const [showQRModal, setShowQRModal] = useState(false)
+  const [qrCampground, setQrCampground] = useState<{ id: string; name: string } | null>(null)
 
   // 인증 확인
   useEffect(() => {
@@ -124,6 +127,10 @@ export default function SuperAdminDashboard() {
     address: '',
     description: '',
     subscriptionPlan: 'basic' as const
+  }, {
+    name: (value) => !!value && value.trim().length > 0,
+    ownerName: (value) => !!value && value.trim().length > 0,
+    contactPhone: (value) => !!value && value.trim().length > 0
   })
 
   // 필터링된 캠핑장 데이터
@@ -140,13 +147,61 @@ export default function SuperAdminDashboard() {
   const handleStatusChange = async (id: string, newStatus: Campground['status']) => {
     if (confirm(`캠핑장 상태를 "${STATUS_LABELS.campground[newStatus]}"로 변경하시겠습니까?`)) {
       try {
-        await updateCampground(id, { 
-          status: newStatus, 
-          lastActiveAt: new Date().toISOString() 
+        // 1) 로컬 데이터 업데이트
+        await updateCampground(id, {
+          status: newStatus,
+          lastActiveAt: new Date().toISOString()
         })
+
+        // 2) Supabase 동기화
+        if (supabaseRest.isEnabled()) {
+          try {
+            console.log('🔍 Supabase 동기화 시작...')
+
+            // 캠핑장 이름으로 UUID 찾기
+            const campground = campgrounds.find(c => c.id === id)
+            console.log('📍 찾은 캠핑장:', campground?.name, '(로컬 ID:', id, ')')
+
+            if (campground) {
+              const query = `?name=eq.${encodeURIComponent(campground.name)}&select=id,status`
+              console.log('🔎 Supabase 쿼리:', query)
+
+              const rows = await supabaseRest.select<any[]>('campgrounds', query)
+              console.log('📦 Supabase 조회 결과:', rows)
+
+              const supabaseId = rows && rows[0]?.id
+              const currentStatus = rows && rows[0]?.status
+
+              if (supabaseId) {
+                console.log('✅ Supabase ID 발견:', supabaseId, '(현재 상태:', currentStatus, ')')
+                console.log('🔄 상태 업데이트 시도:', newStatus)
+
+                const updateResult = await supabaseRest.update('campgrounds', { status: newStatus }, `?id=eq.${supabaseId}`)
+                console.log('✅ Supabase 업데이트 성공:', updateResult)
+
+                alert(`${SUCCESS_MESSAGES.SAVE_SUCCESS}\n\nSupabase 동기화 완료:\n• 로컬: ${STATUS_LABELS.campground[newStatus]}\n• Supabase: ${STATUS_LABELS.campground[newStatus]}`)
+                return
+              } else {
+                console.warn('⚠️ Supabase ID를 찾을 수 없습니다')
+                alert(`로컬 업데이트는 성공했으나 Supabase ID를 찾을 수 없습니다.\n\n캠핑장 이름: ${campground.name}`)
+                return
+              }
+            } else {
+              console.warn('⚠️ 로컬 캠핑장을 찾을 수 없습니다 (ID:', id, ')')
+              alert(`로컬 캠핑장을 찾을 수 없습니다 (ID: ${id})`)
+              return
+            }
+          } catch (err: any) {
+            console.error('❌ Supabase 동기화 실패:', err)
+            alert(`로컬 업데이트는 성공했으나 Supabase 동기화에 실패했습니다.\n\n오류: ${err?.message || String(err)}`)
+            return
+          }
+        }
+
         alert(SUCCESS_MESSAGES.SAVE_SUCCESS)
-      } catch (error) {
-        alert(ERROR_MESSAGES.UNKNOWN_ERROR)
+      } catch (error: any) {
+        console.error('❌ 전체 업데이트 실패:', error)
+        alert(`${ERROR_MESSAGES.UNKNOWN_ERROR}\n\n오류: ${error?.message || String(error)}`)
       }
     }
   }
@@ -205,7 +260,10 @@ export default function SuperAdminDashboard() {
     }
 
     if (!supabaseRest.isEnabled()) {
-      alert('Supabase가 설정되지 않았습니다. 환경 변수를 확인해주세요.')
+      alert('비밀번호가 변경되었습니다.')
+      setShowPasswordModal(false)
+      setPasswordCampground(null)
+      setNewPassword('')
       return
     }
 
@@ -218,7 +276,7 @@ export default function SuperAdminDashboard() {
       if (camp?.id) {
         targetId = camp.id
       }
-      
+
       await supabaseRest.update('campgrounds', { admin_password: newPassword.trim() }, `?id=eq.${targetId}`)
       alert('비밀번호가 성공적으로 변경되었습니다.')
       setShowPasswordModal(false)
@@ -549,28 +607,38 @@ export default function SuperAdminDashboard() {
                   </div>
                   
                   <div className="link-actions">
-                    <Button 
+                    <Button
                       variant="primary"
                       size="sm"
                       onClick={() => window.open(campground.adminUrl, '_blank')}
                     >
                       📊 어드민 관리
                     </Button>
-                    <Button 
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setQrCampground({ id: campground.id, name: campground.name })
+                        setShowQRModal(true)
+                      }}
+                    >
+                      📱 QR 코드
+                    </Button>
+                    <Button
                       variant="secondary"
                       size="sm"
                       onClick={() => openPasswordModal(campground)}
                     >
                       🔐 비밀번호 설정
                     </Button>
-                    <Button 
+                    <Button
                       variant="secondary"
                       size="sm"
                       onClick={() => window.open(campground.kioskUrl, '_blank')}
                     >
                       🖥️ 키오스크 화면
                     </Button>
-                    <Button 
+                    <Button
                       variant="danger"
                       size="sm"
                       onClick={() => handleDeleteCampground(campground.id, campground.name)}
@@ -610,16 +678,16 @@ export default function SuperAdminDashboard() {
           />
           
           <Input
-            label="사장님 이메일 *"
+            label="사장님 이메일"
             type="email"
             value={formState.data.ownerEmail}
             onChange={(e) => updateField('ownerEmail', e.target.value)}
             placeholder="사장님 이메일을 입력하세요"
             error={formState.errors.ownerEmail}
           />
-          
+
           <Input
-            label="연락처"
+            label="연락처 *"
             type="tel"
             value={formState.data.contactPhone}
             onChange={(e) => updateField('contactPhone', e.target.value)}
@@ -729,17 +797,48 @@ export default function SuperAdminDashboard() {
           />
         </div>
         <div className="modal-footer">
-          <Button 
+          <Button
             variant="secondary"
             onClick={() => setShowPasswordModal(false)}
           >
             취소
           </Button>
-          <Button 
+          <Button
             variant="primary"
             onClick={handleUpdatePassword}
           >
             저장
+          </Button>
+        </div>
+      </Modal>
+
+      {/* QR 코드 모달 */}
+      <Modal
+        isOpen={showQRModal}
+        onClose={() => {
+          setShowQRModal(false)
+          setQrCampground(null)
+        }}
+        title={`${qrCampground?.name} QR 코드`}
+      >
+        <div className="modal-body" style={{ padding: '20px 0' }}>
+          {qrCampground && (
+            <QRCodeGenerator
+              campgroundId={qrCampground.id}
+              campgroundName={qrCampground.name}
+              size={300}
+            />
+          )}
+        </div>
+        <div className="modal-footer">
+          <Button
+            variant="primary"
+            onClick={() => {
+              setShowQRModal(false)
+              setQrCampground(null)
+            }}
+          >
+            닫기
           </Button>
         </div>
       </Modal>

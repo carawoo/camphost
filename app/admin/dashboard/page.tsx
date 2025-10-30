@@ -23,6 +23,7 @@ export default function AdminDashboard() {
   })
   const [campgroundId, setCampgroundId] = useState<string>('')
   const [recentActivities, setRecentActivities] = useState<Array<{ status: string; updated_at: string }>>([])
+  const [campgroundStatus, setCampgroundStatus] = useState<string>('')
 
   useEffect(() => {
     // URL에서 캠핑장 식별자 로드 (id 우선, 없으면 name)
@@ -44,6 +45,12 @@ export default function AdminDashboard() {
           )
           const row = rows && rows[0]
           if (row) {
+            setCampgroundStatus(row.status || 'active')
+            // 상태 체크: suspended, terminated만 접근 불가
+            if (row.status && ['suspended', 'terminated'].includes(row.status)) {
+              setIsLoading(false)
+              return
+            }
             const mapped: CampgroundInfo = {
               id: row.id,
               name: row.name,
@@ -62,6 +69,12 @@ export default function AdminDashboard() {
         }
         const fromService = campgroundService.getAll().find(c => c.name === name)
         if (fromService) {
+          setCampgroundStatus(fromService.status || 'active')
+          // 상태 체크: suspended, terminated만 접근 불가
+          if (fromService.status && ['suspended', 'terminated'].includes(fromService.status)) {
+            setIsLoading(false)
+            return
+          }
           const mapped: CampgroundInfo = {
             id: fromService.id,
             name: fromService.name,
@@ -170,6 +183,51 @@ export default function AdminDashboard() {
     )
   }
 
+  // 상태 체크: suspended, terminated만 접근 불가
+  if (campgroundStatus && ['suspended', 'terminated'].includes(campgroundStatus)) {
+    const statusMessages: Record<string, string> = {
+      suspended: '일시정지된 캠핑장입니다. 관리자에게 문의하세요.',
+      terminated: '계약이 해지된 캠핑장입니다. 이용이 불가능합니다.'
+    }
+    return (
+      <div className="admin-dashboard">
+        <div className="dashboard-container">
+          <div className="dashboard-header">
+            <div className="header-left">
+              <Link href="/" className="back-link">← 메인으로</Link>
+              <div className="logo">
+                <span className="logo-icon">🏕️</span>
+                <h1>오도이촌 캠지기 센터</h1>
+              </div>
+            </div>
+          </div>
+          <div className="dashboard-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ textAlign: 'center', padding: 40, maxWidth: 600 }}>
+              <div style={{ fontSize: 64, marginBottom: 20 }}>⚠️</div>
+              <h2 style={{ fontSize: 24, marginBottom: 16, color: '#ef4444' }}>접근 제한</h2>
+              <p style={{ fontSize: 16, color: '#6b7280', lineHeight: 1.6 }}>
+                {statusMessages[campgroundStatus] || '캠핑장 이용이 제한되었습니다.'}
+              </p>
+              <Link href="/super-admin/dashboard" style={{
+                display: 'inline-block',
+                marginTop: 24,
+                padding: '12px 24px',
+                background: '#2E3D31',
+                color: '#fff',
+                borderRadius: 8,
+                textDecoration: 'none',
+                fontSize: 14,
+                fontWeight: 500
+              }}>
+                슈퍼어드민으로 이동
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="admin-dashboard">
       <div className="dashboard-container">
@@ -183,13 +241,13 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="header-right">
-            <button 
+            <Link
+              href={`/admin/settings?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`}
               className="action-btn secondary"
-              onClick={() => setShowCampgroundModal(true)}
             >
-              ⚙️ 캠핑장 정보
-            </button>
-            <button 
+              ⚙️ 설정
+            </Link>
+            <button
               className="action-btn secondary"
               onClick={() => {
                 const url = `/kiosk?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`
