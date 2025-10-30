@@ -585,11 +585,25 @@ export default function SuperAdminDashboard() {
                   </div>
                   <div className="detail-item">
                     <span className="label">등록일:</span>
-                    <span className="value">{new Date(campground.createdAt).toLocaleDateString('ko-KR')}</span>
+                    <span className="value">{new Date(campground.createdAt).toLocaleString('ko-KR', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    })}</span>
                   </div>
                   <div className="detail-item">
                     <span className="label">최근 활동:</span>
-                    <span className="value">{new Date(campground.lastActiveAt).toLocaleDateString('ko-KR')}</span>
+                    <span className="value">{new Date(campground.lastActiveAt).toLocaleString('ko-KR', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    })}</span>
                   </div>
                 </div>
 

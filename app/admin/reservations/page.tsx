@@ -104,9 +104,9 @@ export default function ReservationManagement() {
       return
     }
 
-    // 체크아웃 날짜가 없으면 체크인 다음날로 자동 설정
+    // 체크아웃 날짜가 없으면 체크인 다음날로 자동 설정 (시간 포함)
     const checkOutDate = newReservation.checkOutDate ||
-      new Date(new Date(newReservation.checkInDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      new Date(new Date(newReservation.checkInDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
 
     try {
       if (supabaseRest.isEnabled() && campgroundId) {
@@ -227,9 +227,9 @@ export default function ReservationManagement() {
   const handleUpdateReservationFields = async () => {
     if (!editing) return
 
-    // 체크아웃 날짜가 없으면 체크인 다음날로 자동 설정
+    // 체크아웃 날짜가 없으면 체크인 다음날로 자동 설정 (시간 포함)
     const checkOutDate = editing.checkOutDate ||
-      new Date(new Date(editing.checkInDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      new Date(new Date(editing.checkInDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
 
     try {
       if (supabaseRest.isEnabled()) {
@@ -285,7 +285,15 @@ export default function ReservationManagement() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR')
+    const date = new Date(dateString)
+    return date.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
   }
 
   return (
@@ -460,17 +468,17 @@ export default function ReservationManagement() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>체크인 날짜 *</label>
-                  <input 
-                    type="date" 
+                  <label>체크인 일시 *</label>
+                  <input
+                    type="datetime-local"
                     value={newReservation.checkInDate}
                     onChange={(e) => setNewReservation({ ...newReservation, checkInDate: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
-                  <label>체크아웃 날짜 <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 400 }}>(선택, 미입력 시 체크인 다음날)</span></label>
+                  <label>체크아웃 일시 <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 400 }}>(선택, 미입력 시 체크인 다음날)</span></label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     value={newReservation.checkOutDate}
                     onChange={(e) => setNewReservation({ ...newReservation, checkOutDate: e.target.value })}
                   />
@@ -538,17 +546,17 @@ export default function ReservationManagement() {
                 />
               </div>
               <div className="form-group">
-                <label>체크인 날짜 *</label>
-                <input 
-                  type="date" 
+                <label>체크인 일시 *</label>
+                <input
+                  type="datetime-local"
                   value={editing.checkInDate}
                   onChange={(e) => setEditing({ ...(editing as Reservation), checkInDate: e.target.value })}
                 />
               </div>
               <div className="form-group">
-                <label>체크아웃 날짜 <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 400 }}>(선택)</span></label>
+                <label>체크아웃 일시 <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: 400 }}>(선택)</span></label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={editing.checkOutDate}
                   onChange={(e) => setEditing({ ...(editing as Reservation), checkOutDate: e.target.value })}
                 />
