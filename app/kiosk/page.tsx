@@ -28,6 +28,10 @@ export default function CheckInKiosk() {
   const [campgroundStatus, setCampgroundStatus] = useState<string>('')
   const [actualCheckinTime, setActualCheckinTime] = useState<string | null>(null)
   const [actualCheckoutTime, setActualCheckoutTime] = useState<string | null>(null)
+  const [charcoalEnabled, setCharcoalEnabled] = useState(false)
+  const [charcoalTimeOptions, setCharcoalTimeOptions] = useState<string[]>([])
+  const [selectedCharcoalTime, setSelectedCharcoalTime] = useState<string | null>(null)
+  const [showCharcoalSelection, setShowCharcoalSelection] = useState(false)
 
   // 캠핑장 정보 로드 (Supabase 우선, 폴백은 로컬)
   useEffect(() => {
@@ -58,6 +62,8 @@ export default function CheckInKiosk() {
             })
             setGuidelines(row.guidelines || '')
             setCampgroundId(row.id)
+            setCharcoalEnabled(row.enable_charcoal_reservation || false)
+            setCharcoalTimeOptions(row.charcoal_time_options || [])
             return
           }
           // fallback below
@@ -346,11 +352,37 @@ export default function CheckInKiosk() {
         })
       } catch {}
       setStep('success')
-      setShowSuccessModal(true)
+
+      // Check if charcoal reservation is enabled
+      if (charcoalEnabled && charcoalTimeOptions.length > 0) {
+        setShowCharcoalSelection(true)  // Show charcoal selection UI
+      } else {
+        setShowSuccessModal(true)  // Show final success modal directly
+      }
     } catch (error) {
       setErrorMessage('체크인 처리 중 오류가 발생했습니다. 관리자에게 문의해주세요.')
       setStep('error')
     }
+  }
+
+  const handleCharcoalSelection = async (time: string | null) => {
+    // Save to Supabase if time is selected
+    if (time && foundReservation) {
+      try {
+        if (supabaseRest.isEnabled()) {
+          await supabaseRest.update('reservations', {
+            charcoal_reservation_time: time
+          }, `?id=eq.${foundReservation.id}`)
+        }
+        setSelectedCharcoalTime(time)
+      } catch (error) {
+        console.error('Failed to save charcoal time:', error)
+        // Continue anyway - don't block user
+      }
+    }
+
+    setShowCharcoalSelection(false)
+    setShowSuccessModal(true)  // Show final success modal
   }
 
   const handleCheckOut = async () => {
@@ -800,6 +832,80 @@ export default function CheckInKiosk() {
           )}
         </div>
 
+        {/* Charcoal Reservation Time Selection */}
+        {showCharcoalSelection && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 50
+          }}>
+            <div style={{
+              background: '#fffdf8',
+              borderRadius: 12,
+              width: 'min(92vw, 480px)',
+              padding: 24,
+              border: '1px solid #e7e1d7'
+            }}>
+              <h4 style={{
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 700,
+                color: '#2E3D31',
+                marginBottom: 8
+              }}>
+                🔥 숯불 예약 시간 선택
+              </h4>
+              <p style={{
+                fontSize: 14,
+                color: '#6b7280',
+                marginBottom: 20
+              }}>
+                원하시는 숯불 예약 시간대를 선택해주세요. (선택 사항)
+              </p>
+
+              <select
+                value={selectedCharcoalTime || ''}
+                onChange={(e) => setSelectedCharcoalTime(e.target.value || null)}
+                style={{
+                  width: '100%',
+                  padding: 12,
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: 16,
+                  marginBottom: 20
+                }}
+              >
+                <option value="">-- 시간대를 선택하세요 --</option>
+                {charcoalTimeOptions.map((option, index) => (
+                  <option key={index} value={option}>{option}</option>
+                ))}
+              </select>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  className="result-btn secondary"
+                  onClick={() => handleCharcoalSelection(null)}
+                  style={{ flex: 1 }}
+                >
+                  건너뛰기
+                </button>
+                <button
+                  className="result-btn primary"
+                  onClick={() => handleCharcoalSelection(selectedCharcoalTime)}
+                  disabled={!selectedCharcoalTime}
+                  style={{ flex: 1 }}
+                >
+                  선택 완료
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 체크인 완료 팝업 */}
         {step === 'success' && showSuccessModal && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={() => setShowSuccessModal(false)}>
@@ -830,6 +936,13 @@ export default function CheckInKiosk() {
                   <span className="label">문의</span>
                   <span className="value">{campgroundInfo?.contactPhone || '-'} / {campgroundInfo?.contactEmail || '-'}</span>
                 </div>
+                {/* Show selected charcoal time if any */}
+                {selectedCharcoalTime && (
+                  <div className="info-item" style={{ display: 'block', borderTop: '1px solid #e7e1d7', paddingTop: 12, marginTop: 12 }}>
+                    <div className="label" style={{ marginBottom: 6 }}>🔥 숯불 예약 시간</div>
+                    <div className="value" style={{ fontSize: 16, fontWeight: 600 }}>{selectedCharcoalTime}</div>
+                  </div>
+                )}
               </div>
               <div className="result-message" style={{ textAlign: 'left' }}>
                 <strong>이용 안내</strong>

@@ -83,5 +83,14 @@ export type SupabaseCampground = {
   kiosk_url: string
   created_at: string
   updated_at: string
+  /**
+   * 숯불 예약 기능 활성화 여부
+   */
+  enable_charcoal_reservation?: boolean
+  /**
+   * 숯불 예약 가능 시간대 옵션 배열
+   * @example ["오후 6시", "오후 7시", "오후 8시"]
+   */
+  charcoal_time_options?: string[]
 }
 

@@ -18,6 +18,7 @@ type Reservation = {
   updatedAt: string
   actualCheckinTime?: string
   actualCheckoutTime?: string
+  charcoalReservationTime?: string
 }
 import { supabaseRest } from '@/services/supabaseRest'
 
@@ -26,6 +27,7 @@ export default function ReservationManagement() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [filterCharcoal, setFilterCharcoal] = useState<boolean>(false)
   const [campgroundId, setCampgroundId] = useState<string>('')
   const [editing, setEditing] = useState<Reservation | null>(null)
   const [repeatCounts, setRepeatCounts] = useState<Record<string, number>>({})
@@ -75,7 +77,8 @@ export default function ReservationManagement() {
             createdAt: r.created_at,
             updatedAt: r.updated_at,
             actualCheckinTime: r.actual_checkin_time,
-            actualCheckoutTime: r.actual_checkout_time
+            actualCheckoutTime: r.actual_checkout_time,
+            charcoalReservationTime: r.charcoal_reservation_time
           }))
           setReservations(mapped)
           // 재방문 집계 (동일 이름 + 동일 연락처)
@@ -98,9 +101,11 @@ export default function ReservationManagement() {
     return () => clearInterval(interval)
   }, [campgroundId])
 
-  const filteredReservations = reservations.filter(reservation => 
-    filterStatus === 'all' || reservation.status === filterStatus
-  )
+  const filteredReservations = reservations.filter(reservation => {
+    const statusMatch = filterStatus === 'all' || reservation.status === filterStatus
+    const charcoalMatch = !filterCharcoal || Boolean(reservation.charcoalReservationTime)
+    return statusMatch && charcoalMatch
+  })
 
   const handleAddReservation = async () => {
     if (!newReservation.guestName || !newReservation.phone || !newReservation.checkInDate) {
@@ -138,7 +143,10 @@ export default function ReservationManagement() {
           totalAmount: r.total_amount || 0,
           status: r.status,
           createdAt: r.created_at,
-          updatedAt: r.updated_at
+          updatedAt: r.updated_at,
+          actualCheckinTime: r.actual_checkin_time,
+          actualCheckoutTime: r.actual_checkout_time,
+          charcoalReservationTime: r.charcoal_reservation_time
         }))
         setReservations(mapped)
         const toKey = (n: string, p: string) => `${n.trim()}|${String(p||'').replace(/\D/g,'')}`
@@ -179,7 +187,10 @@ export default function ReservationManagement() {
           totalAmount: r.total_amount || 0,
           status: r.status,
           createdAt: r.created_at,
-          updatedAt: r.updated_at
+          updatedAt: r.updated_at,
+          actualCheckinTime: r.actual_checkin_time,
+          actualCheckoutTime: r.actual_checkout_time,
+          charcoalReservationTime: r.charcoal_reservation_time
         }))
         setReservations(mapped)
         const toKey = (n: string, p: string) => `${n.trim()}|${String(p||'').replace(/\D/g,'')}`
@@ -211,7 +222,8 @@ export default function ReservationManagement() {
             createdAt: r.created_at,
             updatedAt: r.updated_at,
             actualCheckinTime: r.actual_checkin_time,
-            actualCheckoutTime: r.actual_checkout_time
+            actualCheckoutTime: r.actual_checkout_time,
+            charcoalReservationTime: r.charcoal_reservation_time
           }))
           setReservations(mapped)
           const toKey = (n: string, p: string) => `${n.trim()}|${String(p||'').replace(/\D/g,'')}`
@@ -260,7 +272,10 @@ export default function ReservationManagement() {
           totalAmount: r.total_amount || 0,
           status: r.status,
           createdAt: r.created_at,
-          updatedAt: r.updated_at
+          updatedAt: r.updated_at,
+          actualCheckinTime: r.actual_checkin_time,
+          actualCheckoutTime: r.actual_checkout_time,
+          charcoalReservationTime: r.charcoal_reservation_time
         }))
         setReservations(mapped)
       }
@@ -338,11 +353,17 @@ export default function ReservationManagement() {
               >
                 체크인 ({reservations.filter(r => r.status === 'checked-in').length})
               </button>
-              <button 
+              <button
                 className={filterStatus === 'checked-out' ? 'filter-btn active' : 'filter-btn'}
                 onClick={() => setFilterStatus('checked-out')}
               >
                 체크아웃 ({reservations.filter(r => r.status === 'checked-out').length})
+              </button>
+              <button
+                className={filterCharcoal ? 'filter-btn active' : 'filter-btn'}
+                onClick={() => setFilterCharcoal(!filterCharcoal)}
+              >
+                🔥 숯불 예약 ({reservations.filter(r => r.charcoalReservationTime).length})
               </button>
             </div>
           </div>
@@ -353,7 +374,18 @@ export default function ReservationManagement() {
               <div key={reservation.id} className="reservation-card">
                 <div className="reservation-header">
                   <div className="guest-info">
-                    <h3>{reservation.guestName}</h3>
+                    <h3>
+                      {reservation.guestName}
+                      {reservation.charcoalReservationTime && (
+                        <span style={{
+                          marginLeft: 8,
+                          fontSize: 18,
+                          verticalAlign: 'middle'
+                        }}>
+                          🔥
+                        </span>
+                      )}
+                    </h3>
                     <p>{reservation.phone}</p>
                   </div>
                   <div className="status-badge" style={{ backgroundColor: getStatusColor(reservation.status) }}>
@@ -388,6 +420,14 @@ export default function ReservationManagement() {
                       {Math.max(0, (repeatCounts[`${reservation.guestName.trim()}|${String(reservation.phone||'').replace(/\D/g,'')}`] || 1) - 1)}회
                     </span>
                   </div>
+                  {reservation.charcoalReservationTime && (
+                    <div className="detail-item">
+                      <span className="label">🔥 숯불 예약:</span>
+                      <span className="value" style={{ fontWeight: 600, color: '#ea580c' }}>
+                        {reservation.charcoalReservationTime}
+                      </span>
+                    </div>
+                  )}
                   {reservation.actualCheckinTime && (
                     <div className="detail-item">
                       <span className="label">실제 체크인:</span>
