@@ -7,7 +7,7 @@ priority: medium
 created: 2025-10-30T13:56:49Z
 updated: 2025-10-30T13:56:49Z
 branch: "feature/EPIC-8845599"
-pr_url: ""
+pr_url: "https://github.com/carawoo/camphost/pull/10"
 ---
 
 # Epic: Smart Caching for Campground Data
