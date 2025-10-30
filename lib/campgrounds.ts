@@ -135,17 +135,18 @@ export const saveCampgrounds = (campgrounds: Campground[]): void => {
 }
 
 // 새 캠핑장 추가
-export const addCampground = (campgroundData: Omit<Campground, 'id' | 'createdAt' | 'lastActiveAt' | 'adminUrl' | 'kioskUrl'>): Campground => {
+export const addCampground = (campgroundData: Omit<Campground, 'createdAt' | 'lastActiveAt' | 'adminUrl' | 'kioskUrl'> | Omit<Campground, 'id' | 'createdAt' | 'lastActiveAt' | 'adminUrl' | 'kioskUrl'>): Campground => {
   const campgrounds = getAllCampgrounds()
   const newCampground: Campground = {
-    id: Date.now().toString(),
+    // Use provided ID (from Supabase) or generate new one
+    id: 'id' in campgroundData ? campgroundData.id : Date.now().toString(),
     ...campgroundData,
     createdAt: new Date().toISOString().split('T')[0],
     lastActiveAt: new Date().toISOString(),
     adminUrl: `/admin/dashboard?campground=${encodeURIComponent(campgroundData.name)}`,
     kioskUrl: `/kiosk?campground=${encodeURIComponent(campgroundData.name)}`
   }
-  
+
   const updatedCampgrounds = [...campgrounds, newCampground]
   saveCampgrounds(updatedCampgrounds)
   return newCampground

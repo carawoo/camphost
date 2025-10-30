@@ -378,9 +378,15 @@ export default function SuperAdminDashboard() {
         }
         const rows = await supabaseRest.upsert<any[]>('campgrounds', payload)
         createdFromDb = rows && rows[0]
+        console.log('✅ Supabase 생성 완료, UUID:', createdFromDb?.id)
       }
 
-      const created = await addCampground(newCampgroundData)
+      // Use Supabase UUID if available, otherwise addCampground will generate its own
+      const dataWithId = createdFromDb?.id
+        ? { ...newCampgroundData, id: createdFromDb.id }
+        : newCampgroundData
+
+      const created = await addCampground(dataWithId)
       setCreatedCampground(created as unknown as Campground)
       setShowAddModal(false)
       resetForm()
