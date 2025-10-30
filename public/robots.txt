@@ -1,0 +1,11 @@
+# Allow all robots
+User-agent: *
+Allow: /
+
+# Disallow admin and api routes
+Disallow: /admin/
+Disallow: /super-admin/
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://camphost.real-e.space/sitemap.xml
