@@ -46,6 +46,8 @@ export interface Reservation extends BaseEntity {
   guests: number
   totalAmount: number
   status: ReservationStatus
+  actualCheckinTime?: string
+  actualCheckoutTime?: string
 }
 
 export type ReservationStatus = 'confirmed' | 'checked-in' | 'checked-out' | 'cancelled'

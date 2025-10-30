@@ -10,6 +10,8 @@ export interface Reservation {
   totalAmount: number
   status: 'confirmed' | 'checked-in' | 'checked-out'
   createdAt: string
+  actualCheckinTime?: string
+  actualCheckoutTime?: string
 }
 
 const STORAGE_KEY = 'odoichon_reservations'

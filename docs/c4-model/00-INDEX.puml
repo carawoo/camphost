@@ -1,0 +1,225 @@
+@startuml
+' ==============================================================================
+' C4 Model Index - LLM Navigation Guide
+' ==============================================================================
+'
+' 🤖 LLM 워크플로우:
+'
+' 1️⃣  사용자 요청 분석
+'    → 어느 레벨에 영향을 주는가?
+'    → 예: "Slack 알림 추가" = lv1,lv2,lv3,lv4 모두 영향
+'
+' 2️⃣  영향 범위 파악 (Top-Down 탐색)
+'    lv1 (system.puml) → 외부 시스템 변경 필요?
+'    lv2 (overview.puml) → 패키지 관계 변경 필요?
+'    lv3 (sample-domain.puml) → 컴포넌트 추가/변경 필요?
+'    lv4 (*.puml) → 클래스/인터페이스 변경 필요?
+'
+' 3️⃣  코드 수정
+'    packages/sample-domain/src/ 하위 파일 수정
+'
+' 4️⃣  다이어그램 동기화 (Bottom-Up 업데이트)
+'    lv4 업데이트 → lv3 확인 → lv2 확인 → lv1 확인
+'
+' ⚠️  동기화 규칙:
+'    • lv4 변경 → 반드시 lv3도 확인
+'    • lv3 변경 → 반드시 lv2도 확인
+'    • lv2 변경 → 반드시 lv1도 확인
+'    • 각 다이어그램의 "동기화 체크리스트" note 참조
+'
+' ==============================================================================
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+HIDE_STEREOTYPE()
+
+title 🗺️  C4 Model Documentation Tree
+
+' ==============================================================================
+' Level 1: System Context
+' ==============================================================================
+
+package "Level 1: System Context" as lv1_pkg #E1F5FE {
+  card "**system.puml**" as lv1 #0288D1 {
+    component "📍 변경 대상" as lv1_what
+    component "• 외부 시스템 추가/제거" as lv1_1
+    component "• 외부 사용자 추가/제거" as lv1_2
+    component " " as lv1_space1
+    component "🔗 코드 경로" as lv1_code
+    component "• N/A (외부 시스템)" as lv1_3
+    component " " as lv1_space2
+    component "📂 파일" as lv1_file
+    component "• lv1-system-context/" as lv1_4
+  }
+}
+
+' ==============================================================================
+' Level 2: Containers
+' ==============================================================================
+
+package "Level 2: Containers" as lv2_pkg #F3E5F5 {
+  card "**overview.puml**" as lv2 #8E24AA {
+    component "📍 변경 대상" as lv2_what
+    component "• Apps/Packages 추가/제거" as lv2_1
+    component "• 패키지 간 의존성 변경" as lv2_2
+    component " " as lv2_space1
+    component "🔗 코드 경로" as lv2_code
+    component "• apps/*" as lv2_3
+    component "• packages/*" as lv2_4
+    component " " as lv2_space2
+    component "📂 파일" as lv2_file
+    component "• lv2-containers/" as lv2_5
+  }
+}
+
+' ==============================================================================
+' Level 3: Components
+' ==============================================================================
+
+package "Level 3: Components" as lv3_pkg #E8F5E9 {
+  card "**sample-domain.puml**" as lv3 #43A047 {
+    component "📍 변경 대상" as lv3_what
+    component "• Service/Provider 추가/제거" as lv3_1
+    component "• 컴포넌트 관계 변경" as lv3_2
+    component " " as lv3_space1
+    component "🔗 코드 경로" as lv3_code
+    component "• packages/sample-domain/src/" as lv3_3
+    component " " as lv3_space2
+    component "📂 파일" as lv3_file
+    component "• lv3-components/" as lv3_4
+  }
+}
+
+' ==============================================================================
+' Level 4: Code
+' ==============================================================================
+
+package "Level 4: Code" as lv4_pkg #FFF3E0 {
+  package "sample-domain" as lv4_domain {
+    card "**user-service.puml**" as lv4_user #FF6F00 {
+      component "📍 UserService 클래스" as lv4u_1
+      component "🔗 user.service.ts" as lv4u_2
+    }
+
+    card "**notification-service.puml**" as lv4_noti #FF6F00 {
+      component "📍 NotificationService" as lv4n_1
+      component "🔗 notification.service.ts" as lv4n_2
+    }
+
+    card "**notification-providers.puml**" as lv4_prov #FF6F00 {
+      component "📍 Provider 인터페이스" as lv4p_1
+      component "🔗 notification.types.ts" as lv4p_2
+      component "🔗 providers/*.ts" as lv4p_3
+    }
+  }
+
+  note bottom of lv4_domain
+    📂 파일 위치
+    • lv4-code/sample-domain/
+  end note
+}
+
+' ==============================================================================
+' Relationships (Drill Down)
+' ==============================================================================
+
+lv1 -down-> lv2 : "<b>Drill Down</b>\n(Zoom In)"
+lv2 -down-> lv3 : "<b>Drill Down</b>\n(sample-domain)"
+lv3 -down-> lv4_user : "<b>Drill Down</b>\n(User)"
+lv3 -down-> lv4_noti : "<b>Drill Down</b>\n(Notification)"
+lv3 -down-> lv4_prov : "<b>Drill Down</b>\n(Providers)"
+
+lv4_noti .right.> lv4_prov : "Related"
+
+' ==============================================================================
+' Usage Example
+' ==============================================================================
+
+note right of lv1_pkg
+  <b><size:14>🔍 사용 예시</size></b>
+  ====
+  <b>요청:</b> "Slack 알림 추가"
+
+  <b>영향 범위 분석:</b>
+  ✅ lv1: Slack Service 외부 시스템 추가
+  ✅ lv2: sample-domain → Slack 관계 추가
+  ✅ lv3: Slack Provider 컴포넌트 추가
+  ✅ lv4: SlackProvider 인터페이스
+       ConsoleSlackProvider 구현
+       NotificationService.sendSlack()
+
+  <b>동기화 순서:</b>
+  1. 코드 수정
+  2. lv4 업데이트 (providers, service)
+  3. lv3 업데이트 (컴포넌트)
+  4. lv2 업데이트 (관계)
+  5. lv1 업데이트 (외부 시스템)
+end note
+
+' ==============================================================================
+' Workflow Guide
+' ==============================================================================
+
+note as WorkflowGuide #FFFFCC
+  <b><size:16>🤖 LLM 워크플로우 가이드</size></b>
+  ====
+
+  <b>Phase 1: 탐색 (Top-Down)</b>
+  1. 사용자 요청 분석
+  2. lv1 → lv2 → lv3 → lv4 순서로 탐색
+  3. 각 레벨의 "변경 대상" 확인
+  4. 영향 범위 파악
+
+  <b>Phase 2: 수정 (Code)</b>
+  1. 각 다이어그램의 "코드 경로" 참조
+  2. 해당 소스 파일 수정
+  3. 테스트 코드 수정
+
+  <b>Phase 3: 동기화 (Bottom-Up)</b>
+  1. lv4 다이어그램 업데이트
+  2. lv3 다이어그램 확인 및 업데이트
+  3. lv2 다이어그램 확인 및 업데이트
+  4. lv1 다이어그램 확인 및 업데이트
+  5. 각 레벨의 "동기화 체크리스트" 완료
+
+  <b>⚠️  주의사항</b>
+  • 하위 레벨 변경 시 상위 레벨 반드시 확인
+  • 각 다이어그램의 헤더 주석 참조
+  • note에 있는 체크리스트 활용
+end note
+
+' ==============================================================================
+' Legend
+' ==============================================================================
+
+legend right
+  <b><size:16>📚 C4 Model Levels</size></b>
+  ====
+  <b><color:#0288D1>Level 1</color></b>: System Context
+  • 시스템 전체 + 외부 액터/시스템
+  • 모든 이해관계자 대상
+
+  <b><color:#8E24AA>Level 2</color></b>: Container
+  • Apps + Packages 구조
+  • 아키텍트, 개발자 대상
+
+  <b><color:#43A047>Level 3</color></b>: Component
+  • 패키지 내부 컴포넌트
+  • 개발자 대상
+
+  <b><color:#FF6F00>Level 4</color></b>: Code
+  • 클래스, 인터페이스, 메서드
+  • 구현 개발자 대상
+
+  ----
+
+  <b>파일 위치</b>
+  docs/c4-model/
+  ├── 00-INDEX.puml ⭐ (이 파일)
+  ├── lv1-system-context/
+  ├── lv2-containers/
+  ├── lv3-components/
+  └── lv4-code/
+endlegend
+
+@enduml

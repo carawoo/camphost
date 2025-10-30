@@ -16,6 +16,8 @@ type Reservation = {
   status: 'confirmed' | 'checked-in' | 'checked-out'
   createdAt: string
   updatedAt: string
+  actualCheckinTime?: string
+  actualCheckoutTime?: string
 }
 import { supabaseRest } from '@/services/supabaseRest'
 
@@ -71,7 +73,9 @@ export default function ReservationManagement() {
             totalAmount: r.total_amount || 0,
             status: r.status,
             createdAt: r.created_at,
-            updatedAt: r.updated_at
+            updatedAt: r.updated_at,
+            actualCheckinTime: r.actual_checkin_time,
+            actualCheckoutTime: r.actual_checkout_time
           }))
           setReservations(mapped)
           // 재방문 집계 (동일 이름 + 동일 연락처)
@@ -205,7 +209,9 @@ export default function ReservationManagement() {
             totalAmount: r.total_amount || 0,
             status: r.status,
             createdAt: r.created_at,
-            updatedAt: r.updated_at
+            updatedAt: r.updated_at,
+            actualCheckinTime: r.actual_checkin_time,
+            actualCheckoutTime: r.actual_checkout_time
           }))
           setReservations(mapped)
           const toKey = (n: string, p: string) => `${n.trim()}|${String(p||'').replace(/\D/g,'')}`
@@ -382,6 +388,30 @@ export default function ReservationManagement() {
                       {Math.max(0, (repeatCounts[`${reservation.guestName.trim()}|${String(reservation.phone||'').replace(/\D/g,'')}`] || 1) - 1)}회
                     </span>
                   </div>
+                  {reservation.actualCheckinTime && (
+                    <div className="detail-item">
+                      <span className="label">실제 체크인:</span>
+                      <span>{new Date(reservation.actualCheckinTime).toLocaleString('ko-KR', {
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      })}</span>
+                    </div>
+                  )}
+                  {reservation.actualCheckoutTime && (
+                    <div className="detail-item">
+                      <span className="label">실제 체크아웃:</span>
+                      <span>{new Date(reservation.actualCheckoutTime).toLocaleString('ko-KR', {
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      })}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="reservation-actions">

@@ -1,0 +1,128 @@
+@startuml
+' ==============================================================================
+' [Level 2] Container - API Monorepo
+' ==============================================================================
+' Project: @pioncorp/api-monorepo-starter
+' Description: Monorepo 내부의 Apps와 Packages (Containers)
+'
+' 🔗 코드 경로:
+'    • apps/* - 실행 가능한 애플리케이션
+'    • packages/* - 공유 라이브러리/도메인
+'
+' 🔄 동기화 규칙:
+'    ✅ lv1 (system.puml) - 외부 시스템 연결 확인
+'    ✅ lv3 (sample-domain.puml) 변경 시 이 다이어그램 확인 필요
+'    ✅ 새로운 패키지/앱 추가 시 이 다이어그램 업데이트
+'
+' 📍 변경 대상:
+'    • Container - Apps/Packages 추가/제거
+'    • Rel - 패키지 간 의존성 변경
+'    • External Services 연결
+'
+' 🔍 드릴다운:
+'    • sample-domain → ../lv3-components/sample-domain.puml
+'    • (hono-api, shared-core, shared-config는 Level 3 없음 - 단순 구조)
+'
+' ⬆️  Zoom Out: ../lv1-system-context/system.puml
+' ==============================================================================
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title [Level 2] Container - API Monorepo
+
+Person(end_user, "End User", "API 사용자")
+Person(developer, "Developer", "개발자")
+
+System_Boundary(monorepo, "API Monorepo") {
+
+    ' ========== Apps ==========
+    Container_Boundary(apps, "Applications") {
+        Container(hono_api, "Hono API", "Hono.js / TypeScript", "HTTP REST API Server\n- Routes & Controllers\n- Middleware\n- Error Handling")
+    }
+
+    ' ========== Packages (Domain) ==========
+    Container_Boundary(domain_packages, "Domain Packages") {
+        Container(sample_domain, "sample-domain", "@pioncorp/sample-domain", "비즈니스 로직\n- UserService\n- NotificationService\n- Strategy Pattern")
+    }
+
+    ' ========== Packages (Shared) ==========
+    Container_Boundary(shared_packages, "Shared Packages") {
+        Container(shared_core, "shared-core", "@pioncorp/shared-core", "공통 유틸리티\n- Logger\n- DI Container Setup\n- Common Types")
+
+        Container(shared_config, "shared-config", "@pioncorp/shared-config", "공통 설정\n- TypeScript Config\n- ESLint Config\n- Vitest Config")
+    }
+}
+
+' External Systems
+System_Ext(email_service, "Email Service", "AWS SES / SendGrid")
+System_Ext(sms_service, "SMS Service", "Twilio")
+System_Ext(push_service, "Push Service", "Firebase FCM")
+System_Ext(kakao_service, "Kakao Service", "Kakao Talk API")
+
+' User to Apps
+Rel(end_user, hono_api, "HTTP 요청", "REST/JSON")
+Rel(developer, hono_api, "개발/테스트", "Local Dev Server")
+
+' Apps to Packages
+Rel(hono_api, sample_domain, "비즈니스 로직 호출", "Function Call")
+Rel(hono_api, shared_core, "로깅/유틸 사용", "Import")
+
+' Domain to Shared
+Rel(sample_domain, shared_core, "로깅/DI 사용", "Import")
+
+' Shared Config (Build Time)
+Rel_Back(hono_api, shared_config, "빌드 설정", "extends")
+Rel_Back(sample_domain, shared_config, "빌드 설정", "extends")
+Rel_Back(shared_core, shared_config, "빌드 설정", "extends")
+
+' Domain to External Services
+Rel(sample_domain, email_service, "이메일 발송", "HTTPS/API")
+Rel(sample_domain, sms_service, "SMS 발송", "HTTPS/API")
+Rel(sample_domain, push_service, "푸시 발송", "HTTPS/API")
+Rel(sample_domain, kakao_service, "알림톡 발송", "HTTPS/API")
+
+SHOW_LEGEND()
+
+note right of monorepo
+  <b>Monorepo 구조</b>
+  • apps/* - 실행 가능한 애플리케이션
+  • packages/* - 공유 라이브러리
+
+  <b>빌드 시스템</b>
+  • Turborepo - 태스크 오케스트레이션
+  • Yarn Workspaces - 패키지 관리
+  • Changesets - 버전 관리
+end note
+
+note bottom of sample_domain
+  <b>🔍 Drill Down</b>
+  이 컨테이너의 내부 구조:
+  → ../lv3-components/sample-domain.puml
+
+  <b>주요 컴포넌트</b>
+  • UserService
+  • NotificationService
+  • Provider Strategy
+end note
+
+note as SyncGuide #FFE0E0
+  <b>⚠️  동기화 체크리스트</b>
+  ====
+  이 다이어그램 변경 시:
+
+  ☐ 새로운 패키지/앱 추가?
+     → Container 추가
+     → Rel 의존성 추가
+     → lv1에서 외부 시스템 연결 확인
+
+  ☐ lv3 (sample-domain.puml) 변경 시
+     이 다이어그램의 설명 업데이트
+
+  ☐ 외부 서비스 추가/제거 시
+     → lv1 (system.puml) 동기화
+     → sample_domain → 외부 서비스 Rel 추가
+end note
+
+@enduml

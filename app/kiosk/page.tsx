@@ -311,7 +311,12 @@ export default function CheckInKiosk() {
       let updated = false
       try {
         if (name && supabaseRest.isEnabled()) {
-          await (supabaseRest as any).update('reservations', { status: 'checked-in', updated_at: new Date().toISOString() }, `?id=eq.${foundReservation.id}`)
+          const actualCheckinTime = new Date().toISOString()
+          await (supabaseRest as any).update('reservations', {
+            status: 'checked-in',
+            updated_at: actualCheckinTime,
+            actual_checkin_time: actualCheckinTime
+          }, `?id=eq.${foundReservation.id}`)
           updated = true
         }
       } catch {}
@@ -355,7 +360,12 @@ export default function CheckInKiosk() {
       let updated = false
       try {
         if (name && supabaseRest.isEnabled()) {
-          await (supabaseRest as any).update('reservations', { status: 'checked-out', updated_at: new Date().toISOString() }, `?id=eq.${foundReservation.id}`)
+          const actualCheckoutTime = new Date().toISOString()
+          await (supabaseRest as any).update('reservations', {
+            status: 'checked-out',
+            updated_at: actualCheckoutTime,
+            actual_checkout_time: actualCheckoutTime
+          }, `?id=eq.${foundReservation.id}`)
           updated = true
         }
       } catch {}

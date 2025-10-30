@@ -1,0 +1,209 @@
+@startuml
+' ==============================================================================
+' [Level 4] UserService - Class Diagram
+' ==============================================================================
+' Package: @pioncorp/sample-domain
+' Description: 사용자 CRUD 관리 서비스
+'
+' 🔗 코드 경로:
+'    • packages/sample-domain/src/user/user.service.ts
+'    • packages/sample-domain/src/user/user.types.ts
+'
+' 🔄 동기화 규칙:
+'    ✅ 이 파일 변경 → lv3 (sample-domain.puml) "User Management" 확인
+'    ✅ UserService 클래스 변경 시 이 다이어그램 업데이트 필수
+'
+' 📍 변경 대상:
+'    • UserService 클래스 (필드, 메서드)
+'    • User 인터페이스
+'    • CreateUserInput DTO
+'    • UpdateUserInput DTO
+'
+' ⬆️  Zoom Out: ../../lv3-components/sample-domain.puml
+' ==============================================================================
+
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam backgroundColor transparent
+
+package "sample-domain" <<Rectangle>> #85BBF0 {
+
+    class UserService <<singleton>> <<injectable>> {
+        - users: Map<string, User>
+        - logger: Logger
+        __constructor__
+        + UserService(logger: Logger)
+        __methods__
+        + createUser(input: CreateUserInput): Promise<User>
+        + getUserById(id: string): Promise<User | undefined>
+        + getAllUsers(): Promise<User[]>
+        + updateUser(id: string, input: UpdateUserInput): Promise<User | undefined>
+        + deleteUser(id: string): Promise<boolean>
+        __helpers__
+        - isNameDuplicate(name: string, excludeUserId?: string): boolean
+        __storage__
+        .. In-Memory Map ..
+    }
+
+    class User <<interface>> {
+        + id: string
+        + name: string
+        + email: string
+        + createdAt: Date
+    }
+
+    class CreateUserInput <<interface>> {
+        + name: string
+        + email: string
+    }
+
+    class UpdateUserInput <<interface>> {
+        + name?: string
+        + email?: string
+    }
+}
+
+package "shared-core" <<Rectangle>> #85BBF0 {
+    class Logger {
+        + info(message: string, context?: object): void
+        + debug(message: string, context?: object): void
+        + error(message: string, context?: object): void
+        + child(prefix: string): Logger
+    }
+}
+
+' ==============================================================================
+' Relationships
+' ==============================================================================
+
+UserService -right-> Logger : <<uses>>
+UserService .down.> User : <<creates>>
+UserService .down.> User : <<manages>>
+UserService .down.> CreateUserInput : <<accepts>>
+UserService .down.> UpdateUserInput : <<accepts>>
+
+' ==============================================================================
+' Notes
+' ==============================================================================
+
+note right of UserService #FFFFCC
+  <b><size:14>Decorators</size></b>
+  ---
+  • singleton - Application-wide singleton
+  • injectable - DI container injectable
+
+  <b><size:14>Storage</size></b>
+  ---
+  • Map<string, User> (In-Memory)
+  • Key: UUID v4
+  • No persistence (dev/test only)
+
+  <b><size:14>Lifecycle</size></b>
+  ---
+  • Created once per application
+  • Resolved via tsyringe container
+  • Auto-registered by decorators
+end note
+
+note bottom of User #FFFFCC
+  <b>UUID v4 기반 ID</b>
+  createdAt: 자동 생성 (new Date())
+
+  런타임에 생성되는 엔티티
+end note
+
+note bottom of CreateUserInput #FFFFCC
+  <b>DTO (Data Transfer Object)</b>
+
+  클라이언트로부터 받는 입력 데이터
+  검증 로직은 상위 계층(API)에서 처리
+end note
+
+note bottom of UpdateUserInput #FFFFCC
+  <b>DTO (Data Transfer Object)</b>
+
+  사용자 수정용 입력 데이터
+  모든 필드가 옵셔널 (부분 업데이트)
+end note
+
+note as MethodDetails #FFFFCC
+  <b><size:16>메서드 상세</size></b>
+  ====
+  <b>createUser()</b>
+  • 이름 중복 검사 (대소문자 무시)
+  • 중복 시 Error throw
+  • UUID 자동 생성
+  • createdAt 자동 설정
+  • Map에 저장
+  • Logger 기록 (info)
+
+  <b>getUserById()</b>
+  • Map.get() 조회
+  • 존재 시 Logger 기록 (debug)
+  • 없으면 undefined 반환
+
+  <b>getAllUsers()</b>
+  • Map.values() → Array 변환
+  • Logger 기록 (info, count)
+
+  <b>updateUser()</b>
+  • 사용자 존재 여부 확인
+  • 없으면 undefined 반환
+  • name 변경 시 중복 검사 (자신 제외)
+  • 중복 시 Error throw
+  • 제공된 필드만 부분 업데이트
+  • Logger 기록 (info)
+  • 수정된 User 반환
+
+  <b>deleteUser()</b>
+  • Map.delete() 호출
+  • 성공 시 Logger 기록 (info)
+  • boolean 반환 (true/false)
+
+  <b>isNameDuplicate() [private]</b>
+  • 이름 중복 여부 검사 (대소문자 무시)
+  • excludeUserId로 특정 사용자 제외
+  • boolean 반환
+end note
+
+MethodDetails .up. UserService
+
+' ==============================================================================
+' DI Container Relationship
+' ==============================================================================
+
+class "DI Container\n(tsyringe)" as DIContainer <<singleton registry>> #85BBF0 {
+  + resolve<T>(token: string): T
+  + register<T>(token: string, provider: Provider<T>): void
+}
+
+DIContainer -down-> UserService : <<provides>>
+DIContainer -down-> Logger : <<provides>>
+
+note right of DIContainer
+  <b>자동 등록</b>
+  reflect-metadata + decorators
+
+  <b>해소 방법</b>
+  container.resolve(UserService)
+end note
+
+note as SyncGuide #FFE0E0
+  <b>⚠️  동기화 체크리스트</b>
+  ====
+  이 다이어그램 변경 시:
+
+  ☐ packages/sample-domain/src/user/
+     user.service.ts 코드 동기화 확인
+
+  ☐ 새로운 메서드 추가 시
+     lv3 (sample-domain.puml) "User Management"
+     설명 업데이트
+
+  ☐ User 인터페이스 필드 변경 시
+     user.types.ts 확인
+end note
+
+@enduml

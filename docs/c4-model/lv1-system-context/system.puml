@@ -1,0 +1,89 @@
+@startuml
+' ==============================================================================
+' [Level 1] System Context - API Monorepo
+' ==============================================================================
+' Project: @pioncorp/api-monorepo-starter
+' Description: 전체 시스템과 외부 액터/시스템 간의 상호작용
+'
+' 🔗 코드 경로:
+'    • N/A (외부 시스템 및 액터)
+'
+' 🔄 동기화 규칙:
+'    ✅ lv2 (overview.puml) 변경 시 이 다이어그램 확인 필요
+'    ✅ 외부 시스템 추가/제거 시 이 다이어그램 업데이트
+'
+' 📍 변경 대상:
+'    • System_Ext - 외부 시스템 (Email, SMS, Push, Kakao 등)
+'    • Person - 외부 액터 (User, Developer, Admin)
+'    • Rel - 시스템 간 관계
+'
+' 🔍 드릴다운:
+'    • "API Monorepo System" 확대 → ../lv2-containers/overview.puml
+'
+' ⬆️  Zoom Out: 없음 (최상위 레벨)
+' ==============================================================================
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title [Level 1] System Context - API Monorepo
+
+Person(end_user, "End User", "API를 사용하는 최종 사용자")
+Person(developer, "Developer", "시스템을 개발/운영하는 개발자")
+Person(admin, "Administrator", "시스템 관리자")
+
+System_Boundary(monorepo, "API Monorepo") {
+    System(api_system, "API Monorepo System", "TypeScript ESM 기반 모노레포\n- Hono API Server\n- Domain Services\n- Shared Libraries")
+}
+
+System_Ext(email_provider, "Email Service", "이메일 발송\n(AWS SES, SendGrid)")
+System_Ext(sms_provider, "SMS Service", "SMS 발송\n(Twilio)")
+System_Ext(push_provider, "Push Notification Service", "푸시 알림\n(Firebase FCM)")
+System_Ext(kakao_provider, "Kakao Talk Service", "카카오톡 알림톡")
+System_Ext(monitoring, "Monitoring & Logging", "모니터링 및 로깅\n(CloudWatch, Datadog 등)")
+
+' User Interactions
+Rel(end_user, api_system, "HTTP 요청", "REST API / JSON")
+Rel(developer, api_system, "개발/배포", "Git, CI/CD")
+Rel(admin, api_system, "관리/모니터링", "CLI, Dashboard")
+
+' External Service Interactions
+Rel(api_system, email_provider, "이메일 발송 요청", "HTTPS/API")
+Rel(api_system, sms_provider, "SMS 발송 요청", "HTTPS/API")
+Rel(api_system, push_provider, "푸시 알림 요청", "HTTPS/API")
+Rel(api_system, kakao_provider, "알림톡 발송 요청", "HTTPS/API")
+Rel(api_system, monitoring, "로그/메트릭 전송", "HTTPS")
+
+SHOW_LEGEND()
+
+note right of api_system
+  <b>기술 스택</b>
+  • TypeScript 5.x (ESM)
+  • Yarn Workspaces
+  • Turborepo
+  • Vitest (테스트)
+  • tsyringe (DI)
+
+  <b>🔍 Drill Down</b>
+  이 시스템의 내부 구조:
+  → ../lv2-containers/overview.puml
+end note
+
+note as SyncGuide #FFE0E0
+  <b>⚠️  동기화 체크리스트</b>
+  ====
+  이 다이어그램 변경 시:
+
+  ☐ 새로운 외부 시스템 추가?
+     → System_Ext 추가
+     → Rel 관계 추가
+
+  ☐ lv2 (overview.puml)에서
+     외부 시스템과의 연결 확인
+
+  ☐ 외부 시스템 제거 시
+     lv2, lv3, lv4 영향 범위 확인
+end note
+
+@enduml
