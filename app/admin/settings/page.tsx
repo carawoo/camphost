@@ -8,7 +8,7 @@ import { Card, QRCodeGenerator } from '@/components/common'
 import { campgroundService } from '@/services'
 import { getCampgroundInfo } from '../../../lib/campground'
 
-type TabType = 'basic' | 'kiosk' | 'qrcode'
+type TabType = 'basic' | 'kiosk' | 'qrcode' | 'charcoal'
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState<TabType>('qrcode')
@@ -27,6 +27,11 @@ export default function AdminSettings() {
   const [address, setAddress] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [contactEmail, setContactEmail] = useState('')
+
+  // 숯불 예약 설정
+  const [charcoalEnabled, setCharcoalEnabled] = useState(false)
+  const [charcoalTimeOptions, setCharcoalTimeOptions] = useState<string[]>(['오후 6시', '오후 7시', '오후 8시', '오후 9시'])
+  const [newTimeOption, setNewTimeOption] = useState('')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -59,6 +64,8 @@ export default function AdminSettings() {
             setAddress(row.address || '')
             setContactPhone(row.contact_phone || '')
             setContactEmail(row.contact_email || '')
+            setCharcoalEnabled(row.enable_charcoal_reservation || false)
+            setCharcoalTimeOptions(row.charcoal_time_options || ['오후 6시', '오후 7시', '오후 8시', '오후 9시'])
             setLoaded(true)
             return
           }
@@ -136,6 +143,48 @@ export default function AdminSettings() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleSaveCharcoalSettings = async () => {
+    if (!campgroundId) {
+      showToast('캠핑장 정보를 불러오는 중입니다.', 'error')
+      return
+    }
+
+    setSaving(true)
+    try {
+      if (supabaseRest.isEnabled()) {
+        await (supabaseRest as any).update('campgrounds', {
+          enable_charcoal_reservation: charcoalEnabled,
+          charcoal_time_options: charcoalTimeOptions
+        }, `?id=eq.${campgroundId}`)
+        showToast('숯불 예약 설정이 저장되었습니다.', 'success')
+      } else {
+        showToast('Supabase가 활성화되지 않았습니다.', 'error')
+      }
+    } catch (e: any) {
+      showToast(e?.message || '저장 중 오류가 발생했습니다.', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleAddTimeOption = () => {
+    const trimmed = newTimeOption.trim()
+    if (!trimmed) {
+      alert('시간대를 입력해주세요.')
+      return
+    }
+    if (charcoalTimeOptions.includes(trimmed)) {
+      alert('이미 존재하는 시간대입니다.')
+      return
+    }
+    setCharcoalTimeOptions([...charcoalTimeOptions, trimmed])
+    setNewTimeOption('')
+  }
+
+  const handleDeleteTimeOption = (index: number) => {
+    setCharcoalTimeOptions(charcoalTimeOptions.filter((_, i) => i !== index))
   }
 
   // 상태 체크: suspended, terminated만 접근 불가
@@ -237,6 +286,22 @@ export default function AdminSettings() {
                 }}
               >
                 🏕️ 키오스크 안내문
+              </button>
+              <button
+                onClick={() => setActiveTab('charcoal')}
+                style={{
+                  padding: '12px 24px',
+                  background: activeTab === 'charcoal' ? '#2E3D31' : 'transparent',
+                  color: activeTab === 'charcoal' ? '#fff' : '#6b7280',
+                  border: 'none',
+                  borderRadius: '8px 8px 0 0',
+                  cursor: 'pointer',
+                  fontWeight: activeTab === 'charcoal' ? 600 : 400,
+                  fontSize: 15,
+                  transition: 'all 0.2s'
+                }}
+              >
+                🔥 숯불 예약 설정
               </button>
               <button
                 onClick={() => setActiveTab('basic')}
@@ -421,6 +486,114 @@ export default function AdminSettings() {
                       </ul>
                     </div>
                   )}
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* 숯불 예약 설정 탭 */}
+          {activeTab === 'charcoal' && (
+            <div className="management-section" style={{ maxWidth: 800 }}>
+              <Card title="숯불 예약 설정">
+                <div className="space-y-3">
+                  {/* Toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <label style={{ fontSize: 14, fontWeight: 500, color: '#374151' }}>
+                      숯불 예약 기능 활성화
+                    </label>
+                    <input
+                      type="checkbox"
+                      checked={charcoalEnabled}
+                      onChange={(e) => setCharcoalEnabled(e.target.checked)}
+                      style={{ width: 20, height: 20, cursor: 'pointer' }}
+                    />
+                  </div>
+
+                  {/* Time Options (only show if enabled) */}
+                  {charcoalEnabled && (
+                    <>
+                      <div style={{ marginTop: 20 }}>
+                        <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 8 }}>
+                          예약 가능 시간대
+                        </label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                          {charcoalTimeOptions.map((option, index) => (
+                            <div key={index} style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '8px 12px',
+                              background: '#f3f4f6',
+                              borderRadius: 8,
+                              fontSize: 14
+                            }}>
+                              <span>{option}</span>
+                              <button
+                                onClick={() => handleDeleteTimeOption(index)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#ef4444',
+                                  cursor: 'pointer',
+                                  fontSize: 16,
+                                  padding: 0,
+                                  lineHeight: 1
+                                }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Add new time option */}
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <input
+                            type="text"
+                            value={newTimeOption}
+                            onChange={(e) => setNewTimeOption(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleAddTimeOption()
+                              }
+                            }}
+                            placeholder="예) 오후 10시"
+                            style={{
+                              flex: 1,
+                              padding: 12,
+                              border: '1px solid #d1d5db',
+                              borderRadius: 8,
+                              fontSize: 14
+                            }}
+                          />
+                          <button
+                            onClick={handleAddTimeOption}
+                            className="action-btn secondary"
+                            style={{ minWidth: 80 }}
+                          >
+                            추가
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Save Button */}
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 24 }}>
+                    <button
+                      onClick={handleSaveCharcoalSettings}
+                      className="action-btn primary"
+                      disabled={saving || !campgroundId}
+                      style={{ minWidth: 100 }}
+                    >
+                      {saving ? '저장 중...' : '💾 저장'}
+                    </button>
+                    {!campgroundId && (
+                      <span style={{ fontSize: 14, color: '#6b7280' }}>
+                        캠핑장 정보를 불러오는 중입니다...
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Card>
             </div>
