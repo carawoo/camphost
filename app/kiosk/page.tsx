@@ -14,7 +14,7 @@ import { supabaseRest, type SupabaseCampground } from '@/services/supabaseRest'
 
 export default function CheckInKiosk() {
   const [mode, setMode] = useState<'checkin' | 'checkout'>('checkin')
-  const [step, setStep] = useState<'search' | 'confirm' | 'success' | 'error'>('search')
+  const [step, setStep] = useState<'search' | 'confirm' | 'success' | 'error' | 'already-done'>('search')
   const [searchForm, setSearchForm] = useState({
     guestName: '',
     phone: ''
@@ -253,14 +253,14 @@ export default function CheckInKiosk() {
     // 체크인 모드일 때
     if (mode === 'checkin') {
       if (reservation.status === 'checked-in') {
-        setErrorMessage('이미 체크인 완료된 예약입니다.')
-        setStep('error')
+        setFoundReservation(reservation)
+        setStep('already-done')
         return
       }
 
       if (reservation.status === 'checked-out') {
-        setErrorMessage('체크아웃 완료된 예약입니다.')
-        setStep('error')
+        setFoundReservation(reservation)
+        setStep('already-done')
         return
       }
     }
@@ -274,8 +274,8 @@ export default function CheckInKiosk() {
       }
 
       if (reservation.status === 'checked-out') {
-        setErrorMessage('이미 체크아웃 완료된 예약입니다.')
-        setStep('error')
+        setFoundReservation(reservation)
+        setStep('already-done')
         return
       }
     }
@@ -677,6 +677,97 @@ export default function CheckInKiosk() {
                 <div className="result-actions">
                   <button onClick={resetForm} className="result-btn secondary">
                     {mode === 'checkin' ? '새 체크인' : '새 체크아웃'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 'already-done' && foundReservation && (
+            <div className="result-step">
+              <div className="step-indicator">
+                <div className="step">1</div>
+                <div className="step-line active"></div>
+                <div className="step active">2</div>
+                <div className="step-line"></div>
+                <div className="step">3</div>
+              </div>
+
+              <div className="form-container">
+                <span className="result-icon">ℹ️</span>
+                <h3 className="result-title">
+                  {mode === 'checkin'
+                    ? (foundReservation.status === 'checked-in' ? '이미 체크인 완료' : '이미 체크아웃 완료')
+                    : '이미 체크아웃 완료'}
+                </h3>
+                <p className="result-message">
+                  {mode === 'checkin' && foundReservation.status === 'checked-in' && '이미 체크인을 완료하셨습니다.'}
+                  {mode === 'checkin' && foundReservation.status === 'checked-out' && '이미 체크아웃을 완료하셨습니다.'}
+                  {mode === 'checkout' && '이미 체크아웃을 완료하셨습니다.'}
+                </p>
+
+                {/* 예약 정보 */}
+                <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                  <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '12px' }}>예약 정보</div>
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#6b7280', fontSize: '14px' }}>예약자</span>
+                      <span style={{ fontWeight: 600, fontSize: '14px' }}>{foundReservation.guestName}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#6b7280', fontSize: '14px' }}>객실</span>
+                      <span style={{ fontWeight: 600, fontSize: '14px' }}>{foundReservation.roomNumber}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 실제 체크인 시간 */}
+                {foundReservation.actualCheckinTime && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '16px',
+                    background: '#f0fdf4',
+                    borderRadius: '8px',
+                    border: '1px solid #86efac'
+                  }}>
+                    <div style={{ fontSize: '14px', color: '#166534', marginBottom: '4px' }}>실제 체크인 시간</div>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#15803d' }}>
+                      {new Date(foundReservation.actualCheckinTime).toLocaleString('ko-KR', {
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 실제 체크아웃 시간 */}
+                {foundReservation.actualCheckoutTime && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '16px',
+                    background: '#fef3c7',
+                    borderRadius: '8px',
+                    border: '1px solid #fbbf24'
+                  }}>
+                    <div style={{ fontSize: '14px', color: '#92400e', marginBottom: '4px' }}>실제 체크아웃 시간</div>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#b45309' }}>
+                      {new Date(foundReservation.actualCheckoutTime).toLocaleString('ko-KR', {
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="result-actions" style={{ marginTop: '20px' }}>
+                  <button onClick={resetForm} className="result-btn primary">
+                    확인
                   </button>
                 </div>
               </div>
