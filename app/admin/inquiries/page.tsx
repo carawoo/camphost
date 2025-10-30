@@ -1,15 +1,25 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import '../admin.css'
 
 export default function InquiriesPage() {
+  const [campgroundName, setCampgroundName] = useState('')
+  const [campgroundId, setCampgroundId] = useState('')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setCampgroundName(params.get('campground') || '오도이촌')
+    setCampgroundId(params.get('id') || '')
+  }, [])
+
   return (
     <div className="admin-dashboard">
       <div className="dashboard-container">
         <div className="dashboard-header">
           <div className="header-left">
-            <Link href="/admin/dashboard" className="back-link">← 대시보드로</Link>
+            <Link href={`/admin/dashboard?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`} className="back-link">← 대시보드로</Link>
             <div className="logo">
               <span className="logo-icon">💬</span>
               <h1>새 문의 확인</h1>

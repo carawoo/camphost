@@ -29,6 +29,7 @@ export default function ReservationManagement() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterCharcoal, setFilterCharcoal] = useState<boolean>(false)
   const [campgroundId, setCampgroundId] = useState<string>('')
+  const [campgroundName, setCampgroundName] = useState<string>('')
   const [editing, setEditing] = useState<Reservation | null>(null)
   const [repeatCounts, setRepeatCounts] = useState<Record<string, number>>({})
   const [newReservation, setNewReservation] = useState({
@@ -45,6 +46,7 @@ export default function ReservationManagement() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const name = params.get('campground') || '오도이촌'
+    setCampgroundName(name)
     ;(async () => {
       try {
         if (supabaseRest.isEnabled()) {
@@ -315,7 +317,7 @@ export default function ReservationManagement() {
         {/* 헤더 */}
         <div className="dashboard-header">
           <div className="header-left">
-            <Link href="/admin/dashboard" className="back-link">← 대시보드로</Link>
+            <Link href={`/admin/dashboard?campground=${encodeURIComponent(campgroundName)}${campgroundId ? `&id=${campgroundId}` : ''}`} className="back-link">← 대시보드로</Link>
             <div className="logo">
               <span className="logo-icon">📋</span>
               <h1>체크인/체크아웃 관리</h1>
