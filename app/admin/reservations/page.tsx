@@ -259,24 +259,48 @@ export default function ReservationManagement() {
         return
       }
 
+      console.log('[Bulk Delete] Starting deletion for IDs:', Array.from(selectedIds))
+
       // Supabase DELETE API 호출 (여러 개 삭제)
-      const deletePromises = Array.from(selectedIds).map(id =>
-        supabaseRest.delete('reservations', `?id=eq.${id}`)
-      )
+      const deletePromises = Array.from(selectedIds).map(async (id) => {
+        console.log(`[Bulk Delete] Deleting reservation: ${id}`)
+        try {
+          const result = await supabaseRest.delete('reservations', `?id=eq.${id}`)
+          console.log(`[Bulk Delete] Successfully deleted: ${id}`, result)
+          return { id, success: true }
+        } catch (err) {
+          console.error(`[Bulk Delete] Failed to delete ${id}:`, err)
+          return { id, success: false, error: err }
+        }
+      })
 
-      await Promise.all(deletePromises)
+      const results = await Promise.all(deletePromises)
 
-      // State에서 제거
-      setReservations(reservations.filter(r => !selectedIds.has(r.id)))
+      const successCount = results.filter(r => r.success).length
+      const failCount = results.filter(r => !r.success).length
+
+      console.log(`[Bulk Delete] Results: ${successCount} success, ${failCount} failed`)
+
+      if (failCount > 0) {
+        const failedIds = results.filter(r => !r.success).map(r => r.id)
+        console.error('[Bulk Delete] Failed IDs:', failedIds)
+        alert(`${failCount}개의 예약 삭제에 실패했습니다.\n성공: ${successCount}개\n\n브라우저 콘솔을 확인해주세요.`)
+      }
+
+      // 성공한 항목만 State에서 제거
+      const successIds = new Set(results.filter(r => r.success).map(r => r.id))
+      setReservations(reservations.filter(r => !successIds.has(r.id)))
 
       // 삭제 모드 종료 및 선택 초기화
       setDeleteMode(false)
       setSelectedIds(new Set())
 
-      alert(`${selectedIds.size}개의 예약이 삭제되었습니다.`)
+      if (successCount > 0) {
+        alert(`${successCount}개의 예약이 삭제되었습니다.${failCount > 0 ? `\n${failCount}개 실패` : ''}`)
+      }
     } catch (error) {
-      console.error('Failed to delete reservations:', error)
-      alert('예약 삭제 중 오류가 발생했습니다.')
+      console.error('[Bulk Delete] Unexpected error:', error)
+      alert(`예약 삭제 중 오류가 발생했습니다.\n\n에러: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
