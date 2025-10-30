@@ -11,6 +11,9 @@ import {
 import { getCampgroundInfo, type CampgroundInfo } from '../../lib/campground'
 import { campgroundService } from '@/services'
 import { supabaseRest, type SupabaseCampground } from '@/services/supabaseRest'
+import { cacheManager } from '../../lib/cache'
+
+const CACHE_TTL_MS = 300000 // 5 minutes
 
 export default function CheckInKiosk() {
   const [mode, setMode] = useState<'checkin' | 'checkout'>('checkin')
@@ -33,19 +36,54 @@ export default function CheckInKiosk() {
   const [selectedCharcoalTime, setSelectedCharcoalTime] = useState<string | null>(null)
   const [showCharcoalSelection, setShowCharcoalSelection] = useState(false)
 
-  // 캠핑장 정보 로드 (Supabase 우선, 폴백은 로컬)
+  // 캠핑장 정보 로드 (Cache-First 전략: 캐시 → Supabase → 폴백)
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const id = urlParams.get('id') || undefined
-    const name = urlParams.get('campground') || undefined
-    try {
-      if ((id || name) && supabaseRest.isEnabled()) {
-        (async () => {
+    const loadCampground = async () => {
+      const urlParams = new URLSearchParams(window.location.search)
+      const id = urlParams.get('id') || undefined
+      const name = urlParams.get('campground') || undefined
+
+      // 캐시 키 생성 (id 우선, name은 나중에 조회 후 설정)
+      let cacheKey = id ? `campground_${id}` : null
+
+      // 1. 캐시 확인 (id가 있는 경우에만)
+      if (cacheKey) {
+        try {
+          const cached = cacheManager.get<SupabaseCampground>(cacheKey)
+          if (cached) {
+            // 캐시 히트 - 즉시 state 설정
+            setCampgroundStatus(cached.status || 'active')
+            if (cached.status && ['pending', 'suspended', 'terminated'].includes(cached.status)) {
+              return
+            }
+            setCampgroundInfo({
+              id: cached.id,
+              name: cached.name,
+              contactPhone: cached.contact_phone || '',
+              contactEmail: cached.contact_email || '',
+              address: cached.address || '',
+              description: cached.description || ''
+            })
+            setGuidelines(cached.guidelines || '')
+            setCampgroundId(cached.id)
+            setCharcoalEnabled(cached.enable_charcoal_reservation || false)
+            setCharcoalTimeOptions(cached.charcoal_time_options || [])
+            // 캐시 히트 후에도 백그라운드에서 Supabase 조회 계속 진행
+          }
+        } catch (err) {
+          console.error('[Kiosk] Cache read error:', err)
+        }
+      }
+
+      // 2. Supabase 조회 (캐시 미스 또는 백그라운드 갱신)
+      try {
+        if ((id || name) && supabaseRest.isEnabled()) {
           const query = id
             ? `?id=eq.${encodeURIComponent(id)}&select=*`
             : `?name=eq.${encodeURIComponent(name!)}&select=*`
           const rows = await supabaseRest.select<SupabaseCampground[]>('campgrounds', query)
           const row = rows && rows[0]
+
           if (row) {
             setCampgroundStatus(row.status || 'active')
             // 상태 체크: pending, suspended, terminated는 접근 불가
@@ -64,13 +102,21 @@ export default function CheckInKiosk() {
             setCampgroundId(row.id)
             setCharcoalEnabled(row.enable_charcoal_reservation || false)
             setCharcoalTimeOptions(row.charcoal_time_options || [])
+
+            // 캐시에 저장 (5분 TTL)
+            try {
+              const finalCacheKey = `campground_${row.id}`
+              cacheManager.set(finalCacheKey, row, CACHE_TTL_MS)
+            } catch (err) {
+              console.error('[Kiosk] Cache write error:', err)
+            }
             return
           }
-          // fallback below
+
+          // Supabase에서 못 찾음 - fallback to campgroundService
           const target = campgroundService.getAll().find(c => c.name === name)
           if (target) {
             setCampgroundStatus(target.status || 'active')
-            // 상태 체크: pending, suspended, terminated는 접근 불가
             if (target.status && ['pending', 'suspended', 'terminated'].includes(target.status)) {
               return
             }
@@ -84,38 +130,53 @@ export default function CheckInKiosk() {
             })
             setCampgroundId(target.id)
           } else {
+            // 최종 fallback: localStorage
             const info = getCampgroundInfo()
             setCampgroundInfo(info)
             if (info?.id) setCampgroundId(info.id)
           }
-        })()
-        return
-      }
-      if (name) {
-        const target = campgroundService.getAll().find(c => c.name === name)
-        if (target) {
-          setCampgroundStatus(target.status || 'active')
-          // 상태 체크: pending, suspended, terminated는 접근 불가
-          if (target.status && ['pending', 'suspended', 'terminated'].includes(target.status)) {
-            return
-          }
-          const mapped: CampgroundInfo = {
-            id: target.id,
-            name: target.name,
-            contactPhone: target.contactInfo?.phone || '',
-            contactEmail: target.contactInfo?.email || '',
-            address: target.address || '',
-            description: target.description || ''
-          }
-          setCampgroundInfo(mapped)
-          setCampgroundId(target.id)
           return
         }
+
+        // Supabase 비활성 시 - campgroundService 사용
+        if (name) {
+          const target = campgroundService.getAll().find(c => c.name === name)
+          if (target) {
+            setCampgroundStatus(target.status || 'active')
+            if (target.status && ['pending', 'suspended', 'terminated'].includes(target.status)) {
+              return
+            }
+            const mapped: CampgroundInfo = {
+              id: target.id,
+              name: target.name,
+              contactPhone: target.contactInfo?.phone || '',
+              contactEmail: target.contactInfo?.email || '',
+              address: target.address || '',
+              description: target.description || ''
+            }
+            setCampgroundInfo(mapped)
+            setCampgroundId(target.id)
+            return
+          }
+        }
+      } catch (err) {
+        console.error('[Kiosk] Failed to load campground from Supabase:', err)
+        // 캐시가 있으면 계속 사용 (이미 설정됨), 없으면 fallback
+        if (!cacheKey || !cacheManager.get(cacheKey)) {
+          const info = getCampgroundInfo()
+          setCampgroundInfo(info)
+          if (info?.id) setCampgroundId(info.id)
+        }
+        return
       }
-    } catch {}
-    const info = getCampgroundInfo()
-    setCampgroundInfo(info)
-    if (info?.id) setCampgroundId(info.id)
+
+      // 모든 조회 실패 시 최종 fallback
+      const info = getCampgroundInfo()
+      setCampgroundInfo(info)
+      if (info?.id) setCampgroundId(info.id)
+    }
+
+    loadCampground()
   }, [])
 
   // URL 파라미터에서 정보 가져오기
