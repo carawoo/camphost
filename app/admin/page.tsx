@@ -5,9 +5,18 @@ import Link from 'next/link'
 import './admin.css'
 
 export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
   const [loginForm, setLoginForm] = useState({
     campgroundName: '',
     password: ''
+  })
+  const [registerForm, setRegisterForm] = useState({
+    campgroundName: '',
+    password: '',
+    passwordConfirm: '',
+    ownerName: '',
+    phone: '',
+    email: ''
   })
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [helpForm, setHelpForm] = useState({
@@ -116,6 +125,65 @@ export default function AdminPage() {
     }
   }
 
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // 입력 검증
+    if (!registerForm.campgroundName || !registerForm.password || !registerForm.passwordConfirm ||
+        !registerForm.ownerName || !registerForm.phone || !registerForm.email) {
+      alert('모든 필드를 입력해주세요.')
+      return
+    }
+
+    // 비밀번호 확인
+    if (registerForm.password !== registerForm.passwordConfirm) {
+      alert('비밀번호가 일치하지 않습니다.')
+      return
+    }
+
+    // 비밀번호 길이 검증
+    if (registerForm.password.length < 4) {
+      alert('비밀번호는 최소 4자 이상이어야 합니다.')
+      return
+    }
+
+    try {
+      // 회원가입 API 호출
+      const response = await fetch('/api/admin/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          campgroundName: registerForm.campgroundName,
+          password: registerForm.password,
+          ownerName: registerForm.ownerName,
+          phone: registerForm.phone,
+          email: registerForm.email
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert('회원가입 성공! 관리자 페이지로 이동합니다.')
+        // 회원가입 성공 시 자동 로그인
+        const urlParams = new URLSearchParams({
+          campground: data.campgroundName
+        })
+        if (data.campgroundId) {
+          urlParams.append('id', data.campgroundId)
+        }
+        window.location.href = `/admin/dashboard?${urlParams.toString()}`
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || '회원가입에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('회원가입 오류:', error)
+      alert('회원가입 처리 중 오류가 발생했습니다.')
+    }
+  }
+
   return (
     <div className="admin-login-page">
       <div className="login-container">
@@ -130,7 +198,27 @@ export default function AdminPage() {
             <div className="chip">베타 모집</div>
           </div>
 
-          <form onSubmit={handleLogin} className="login-form">
+          {/* 탭 메뉴 */}
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={`tab-button ${activeTab === 'login' ? 'active' : ''}`}
+              onClick={() => setActiveTab('login')}
+            >
+              로그인
+            </button>
+            <button
+              type="button"
+              className={`tab-button ${activeTab === 'register' ? 'active' : ''}`}
+              onClick={() => setActiveTab('register')}
+            >
+              회원가입
+            </button>
+          </div>
+
+          {/* 로그인 폼 */}
+          {activeTab === 'login' && (
+            <form onSubmit={handleLogin} className="login-form">
             <div className="form-group">
               <label htmlFor="campgroundName">캠핑장 이름</label>
               <input
@@ -159,6 +247,90 @@ export default function AdminPage() {
               로그인
             </button>
           </form>
+          )}
+
+          {/* 회원가입 폼 */}
+          {activeTab === 'register' && (
+            <form onSubmit={handleRegister} className="login-form">
+              <div className="form-group">
+                <label htmlFor="registerCampgroundName">캠핑장 이름 *</label>
+                <input
+                  type="text"
+                  id="registerCampgroundName"
+                  value={registerForm.campgroundName}
+                  onChange={(e) => setRegisterForm({...registerForm, campgroundName: e.target.value})}
+                  placeholder="예) 오도이촌캠핑장"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="registerPassword">비밀번호 * (최소 4자)</label>
+                <input
+                  type="password"
+                  id="registerPassword"
+                  value={registerForm.password}
+                  onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
+                  placeholder="비밀번호를 입력하세요"
+                  required
+                  minLength={4}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="registerPasswordConfirm">비밀번호 확인 *</label>
+                <input
+                  type="password"
+                  id="registerPasswordConfirm"
+                  value={registerForm.passwordConfirm}
+                  onChange={(e) => setRegisterForm({...registerForm, passwordConfirm: e.target.value})}
+                  placeholder="비밀번호를 다시 입력하세요"
+                  required
+                  minLength={4}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="registerOwnerName">담당자명 *</label>
+                <input
+                  type="text"
+                  id="registerOwnerName"
+                  value={registerForm.ownerName}
+                  onChange={(e) => setRegisterForm({...registerForm, ownerName: e.target.value})}
+                  placeholder="예) 홍길동"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="registerPhone">연락처 *</label>
+                <input
+                  type="tel"
+                  id="registerPhone"
+                  value={registerForm.phone}
+                  onChange={(e) => setRegisterForm({...registerForm, phone: e.target.value})}
+                  placeholder="예) 010-1234-5678"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="registerEmail">이메일 *</label>
+                <input
+                  type="email"
+                  id="registerEmail"
+                  value={registerForm.email}
+                  onChange={(e) => setRegisterForm({...registerForm, email: e.target.value})}
+                  placeholder="예) example@camp.com"
+                  required
+                />
+              </div>
+
+              <button type="submit" className="login-btn">
+                회원가입하기
+              </button>
+            </form>
+          )}
 
           <div className="login-links">
             <div className="member-links">
