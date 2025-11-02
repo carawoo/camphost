@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. 새 캠핑장 등록
+      // admin_url, kiosk_url은 generated column이므로 제외
       const newCampground = {
         name: campgroundName,
         owner_name: ownerName,
@@ -53,8 +54,6 @@ export async function POST(request: NextRequest) {
         admin_password: password,
         status: 'active', // 즉시 사용 가능
         subscription_plan: 'basic',
-        admin_url: `/admin/dashboard?campground=${encodeURIComponent(campgroundName)}`,
-        kiosk_url: `/kiosk?campground=${encodeURIComponent(campgroundName)}`,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
@@ -65,16 +64,6 @@ export async function POST(request: NextRequest) {
       if (!created) {
         throw new Error('캠핑장 등록에 실패했습니다.')
       }
-
-      // URL에 id 파라미터 추가
-      const adminUrl = `/admin/dashboard?campground=${encodeURIComponent(campgroundName)}&id=${created.id}`
-      const kioskUrl = `/kiosk?campground=${encodeURIComponent(campgroundName)}&id=${created.id}`
-
-      // URL 업데이트
-      await supabaseRest.update('campgrounds', {
-        admin_url: adminUrl,
-        kiosk_url: kioskUrl
-      }, `?id=eq.${created.id}`)
 
       return NextResponse.json({
         success: true,
