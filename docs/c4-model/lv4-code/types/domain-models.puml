@@ -1,0 +1,547 @@
+@startuml Domain Models - Level 4 Code
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' CampHost - Domain Models (Level 4: Code)
+' ============================================================================
+'
+' 🔗 코드 경로: src/types/index.ts
+'
+' 도메인 모델 타입 정의
+' - 공통 타입 (BaseEntity)
+' - 사용자 관련 타입 (User)
+' - 캠핑장 관련 타입 (Campground, ContactInfo)
+' - 예약 관련 타입 (Reservation)
+' - API 응답 타입 (ApiResponse, PaginatedResponse)
+' - 폼 관련 타입 (FormState)
+' - 필터 및 검색 타입 (FilterOptions)
+' - 컴포넌트 Props 타입
+' - 상태 관리 타입 (AppState, Action)
+' - 설정 타입 (AppConfig)
+'
+' ============================================================================
+
+title Domain Models - Code Level
+
+' ============================================================================
+' 1. 공통 Base 타입
+' ============================================================================
+interface BaseEntity {
+  + id: string
+  + createdAt: string
+  + updatedAt: string
+}
+
+note right of BaseEntity
+  **공통 엔티티 Base 타입**
+
+  - 모든 도메인 엔티티가 상속
+  - Supabase UUID 기반 id
+  - ISO 8601 타임스탬프
+end note
+
+' ============================================================================
+' 2. 사용자 관련 타입
+' ============================================================================
+interface User {
+  + id: string
+  + createdAt: string
+  + updatedAt: string
+  --
+  + name: string
+  + email: string
+  + phone: string
+  + role: UserRole
+}
+
+enum UserRole {
+  super_admin
+  campground_owner
+  guest
+}
+
+note right of User
+  **사용자 정보 타입**
+
+  - BaseEntity 상속
+  - role: 사용자 역할 (3단계)
+    - super_admin: 슈퍼 관리자
+    - campground_owner: 캠핑장 소유자
+    - guest: 손님
+end note
+
+' ============================================================================
+' 3. 캠핑장 관련 타입
+' ============================================================================
+interface Campground {
+  + id: string
+  + createdAt: string
+  + updatedAt: string
+  --
+  + name: string
+  + owner: User
+  + contactInfo: ContactInfo
+  + address: string
+  + description: string
+  + status: CampgroundStatus
+  + subscriptionPlan: SubscriptionPlan
+  + lastActiveAt: string
+  + adminUrl: string
+  + kioskUrl: string
+}
+
+interface ContactInfo {
+  + phone: string
+  + email: string
+}
+
+enum CampgroundStatus {
+  active
+  pending
+  suspended
+  terminated
+}
+
+enum SubscriptionPlan {
+  basic
+  premium
+  enterprise
+}
+
+note right of Campground
+  **캠핑장 정보 타입**
+
+  - BaseEntity 상속
+  - owner: User 타입 포함
+  - contactInfo: 연락처 정보
+  - status: 캠핑장 상태 (4단계)
+    - active: 활성
+    - pending: 대기
+    - suspended: 일시정지
+    - terminated: 종료
+  - subscriptionPlan: 구독 플랜 (3단계)
+    - basic: 기본
+    - premium: 프리미엄
+    - enterprise: 엔터프라이즈
+  - adminUrl/kioskUrl: 각 캠핑장별 관리/키오스크 URL
+end note
+
+note right of ContactInfo
+  **연락처 정보 타입**
+
+  - 전화번호 및 이메일
+  - Campground에서 사용
+end note
+
+' ============================================================================
+' 4. 예약 관련 타입
+' ============================================================================
+interface Reservation {
+  + id: string
+  + createdAt: string
+  + updatedAt: string
+  --
+  + guest: User
+  + campground: Campground
+  + roomNumber: string
+  + checkInDate: string
+  + checkOutDate: string
+  + guests: number
+  + totalAmount: number
+  + status: ReservationStatus
+  + actualCheckinTime?: string
+  + actualCheckoutTime?: string
+}
+
+enum ReservationStatus {
+  confirmed
+  checked-in
+  checked-out
+  cancelled
+}
+
+note right of Reservation
+  **예약 정보 타입**
+
+  - BaseEntity 상속
+  - guest: User 타입 포함
+  - campground: Campground 타입 포함
+  - status: 예약 상태 (4단계)
+    - confirmed: 예약 확정
+    - checked-in: 체크인 완료
+    - checked-out: 체크아웃 완료
+    - cancelled: 취소
+  - actualCheckinTime/actualCheckoutTime: 실제 체크인/아웃 시간 (옵셔널)
+end note
+
+' ============================================================================
+' 5. API 응답 타입
+' ============================================================================
+interface "ApiResponse<T>" as ApiResponse {
+  + success: boolean
+  + data?: T
+  + error?: string
+  + message?: string
+}
+
+interface "PaginatedResponse<T>" as PaginatedResponse {
+  + success: boolean
+  + data?: T[]
+  + error?: string
+  + message?: string
+  --
+  + pagination: PaginationInfo
+}
+
+interface PaginationInfo {
+  + page: number
+  + limit: number
+  + total: number
+  + totalPages: number
+}
+
+note right of ApiResponse
+  **제네릭 API 응답 타입**
+
+  - 모든 API 응답의 기본 구조
+  - 제네릭 타입 <T>로 유연성 제공
+  - success: 성공/실패 여부
+  - data: 응답 데이터 (옵셔널)
+  - error/message: 에러 메시지 (옵셔널)
+end note
+
+note right of PaginatedResponse
+  **페이지네이션 응답 타입**
+
+  - ApiResponse<T[]> 상속
+  - pagination: 페이지 정보
+    - page: 현재 페이지
+    - limit: 페이지당 항목 수
+    - total: 전체 항목 수
+    - totalPages: 전체 페이지 수
+end note
+
+' ============================================================================
+' 6. 폼 관련 타입
+' ============================================================================
+interface "FormState<T>" as FormState {
+  + data: T
+  + errors: Partial<Record<keyof T, string>>
+  + isSubmitting: boolean
+  + isValid: boolean
+}
+
+note right of FormState
+  **제네릭 폼 상태 타입**
+
+  - 제네릭 타입 <T>로 유연성 제공
+  - data: 폼 데이터
+  - errors: 필드별 에러 메시지 (옵셔널)
+  - isSubmitting: 제출 중 여부
+  - isValid: 유효성 검증 상태
+
+  **사용 예시**:
+  ```typescript
+  FormState<{ name: string, email: string }>
+  ```
+end note
+
+' ============================================================================
+' 7. 필터 및 검색 타입
+' ============================================================================
+interface FilterOptions {
+  + status?: CampgroundStatus | 'all'
+  + search?: string
+  + page?: number
+  + limit?: number
+}
+
+note right of FilterOptions
+  **필터 및 검색 옵션 타입**
+
+  - 모든 필드 옵셔널
+  - status: 캠핑장 상태 필터 ('all' 포함)
+  - search: 검색어
+  - page/limit: 페이지네이션 옵션
+end note
+
+' ============================================================================
+' 8. 컴포넌트 Props 타입
+' ============================================================================
+interface BaseComponentProps {
+  + className?: string
+  + children?: React.ReactNode
+}
+
+interface ModalProps {
+  + className?: string
+  + children?: React.ReactNode
+  --
+  + isOpen: boolean
+  + onClose: () => void
+  + title?: string
+}
+
+interface "TableColumn<T>" as TableColumn {
+  + key: keyof T
+  + label: string
+  + sortable?: boolean
+  + render?: (value: any, item: T) => React.ReactNode
+}
+
+note right of BaseComponentProps
+  **기본 컴포넌트 Props 타입**
+
+  - className: CSS 클래스 (옵셔널)
+  - children: React 자식 요소 (옵셔널)
+end note
+
+note right of ModalProps
+  **모달 컴포넌트 Props 타입**
+
+  - BaseComponentProps 상속
+  - isOpen: 모달 열림 상태
+  - onClose: 닫기 콜백
+  - title: 모달 제목 (옵셔널)
+end note
+
+note right of TableColumn
+  **제네릭 테이블 컬럼 타입**
+
+  - 제네릭 타입 <T>로 유연성 제공
+  - key: 데이터 필드명
+  - label: 컬럼 라벨
+  - sortable: 정렬 가능 여부 (옵셔널)
+  - render: 커스텀 렌더 함수 (옵셔널)
+
+  **사용 예시**:
+  ```typescript
+  TableColumn<Campground>
+  ```
+end note
+
+' ============================================================================
+' 9. 상태 관리 타입
+' ============================================================================
+interface AppState {
+  + user: User | null
+  + campgrounds: Campground[]
+  + reservations: Reservation[]
+  + isLoading: boolean
+  + error: string | null
+}
+
+interface "Action<T>" as Action {
+  + type: string
+  + payload?: T
+}
+
+note right of AppState
+  **전역 애플리케이션 상태 타입**
+
+  - user: 현재 로그인 사용자
+  - campgrounds: 캠핑장 목록
+  - reservations: 예약 목록
+  - isLoading: 로딩 상태
+  - error: 에러 메시지
+end note
+
+note right of Action
+  **Redux/Reducer 액션 타입**
+
+  - 제네릭 타입 <T>로 payload 타입 정의
+  - type: 액션 타입 문자열
+  - payload: 액션 데이터 (옵셔널)
+
+  **사용 예시**:
+  ```typescript
+  Action<Campground>
+  Action<{ id: string }>
+  ```
+end note
+
+' ============================================================================
+' 10. 설정 타입
+' ============================================================================
+interface AppConfig {
+  + apiBaseUrl: string
+  + storageKeys: StorageKeys
+  + defaultPagination: DefaultPagination
+}
+
+interface StorageKeys {
+  + user: string
+  + campgrounds: string
+  + reservations: string
+  + campgroundInfo: string
+  + superAdmin: string
+}
+
+interface DefaultPagination {
+  + page: number
+  + limit: number
+}
+
+note right of AppConfig
+  **애플리케이션 설정 타입**
+
+  - apiBaseUrl: API 엔드포인트
+  - storageKeys: localStorage 키 모음
+  - defaultPagination: 기본 페이지네이션 설정
+end note
+
+note right of StorageKeys
+  **localStorage 키 타입**
+
+  - 모든 localStorage 키를 중앙 관리
+  - 타입 안전성 제공
+end note
+
+' ============================================================================
+' 타입 관계
+' ============================================================================
+
+' BaseEntity 상속
+User -up-|> BaseEntity
+Campground -up-|> BaseEntity
+Reservation -up-|> BaseEntity
+
+' 포함 관계
+Campground *-- ContactInfo : contains
+Campground *-- User : owner
+Reservation *-- User : guest
+Reservation *-- Campground : campground
+PaginatedResponse *-- PaginationInfo : contains
+AppState *-- User : user
+AppState *-- Campground : campgrounds[]
+AppState *-- Reservation : reservations[]
+AppConfig *-- StorageKeys : storageKeys
+AppConfig *-- DefaultPagination : defaultPagination
+
+' Enum 사용
+User --> UserRole : uses
+Campground --> CampgroundStatus : uses
+Campground --> SubscriptionPlan : uses
+Reservation --> ReservationStatus : uses
+FilterOptions ..> CampgroundStatus : uses
+
+' Props 상속
+ModalProps -up-|> BaseComponentProps
+
+' Generic 타입 의존성 (점선으로 표시)
+ApiResponse ..> "T" : generic
+PaginatedResponse ..> "T" : generic
+FormState ..> "T" : generic
+TableColumn ..> "T" : generic
+Action ..> "T" : generic
+
+' ============================================================================
+' 레이아웃 힌트
+' ============================================================================
+BaseEntity -[hidden]down- User
+User -[hidden]down- UserRole
+Campground -[hidden]down- CampgroundStatus
+CampgroundStatus -[hidden]right- SubscriptionPlan
+Reservation -[hidden]down- ReservationStatus
+ApiResponse -[hidden]down- PaginatedResponse
+PaginatedResponse -[hidden]down- PaginationInfo
+FormState -[hidden]down- FilterOptions
+BaseComponentProps -[hidden]down- ModalProps
+ModalProps -[hidden]down- TableColumn
+AppState -[hidden]down- Action
+Action -[hidden]down- AppConfig
+
+legend right
+  **Level 4: Code - Domain Models**
+
+  **파일**: src/types/index.ts
+  **언어**: TypeScript
+  **패턴**: Interface-Based Type Definitions
+
+  **타입 분류**:
+
+  **1. 도메인 엔티티** (BaseEntity 상속):
+  - User: 사용자 (3가지 역할)
+  - Campground: 캠핑장 (4가지 상태, 3가지 플랜)
+  - Reservation: 예약 (4가지 상태)
+
+  **2. API 관련 타입**:
+  - ApiResponse<T>: 제네릭 API 응답
+  - PaginatedResponse<T>: 페이지네이션 응답
+
+  **3. UI 관련 타입**:
+  - FormState<T>: 폼 상태 관리
+  - FilterOptions: 필터/검색 옵션
+  - BaseComponentProps: 공통 Props
+  - ModalProps: 모달 Props
+  - TableColumn<T>: 테이블 컬럼 정의
+
+  **4. 상태 관리 타입**:
+  - AppState: 전역 상태
+  - Action<T>: Redux/Reducer 액션
+
+  **5. 설정 타입**:
+  - AppConfig: 앱 설정
+  - StorageKeys: localStorage 키
+  - DefaultPagination: 페이지네이션 기본값
+
+  **제네릭 타입의 장점**:
+  - 타입 안전성 향상
+  - 재사용성 극대화
+  - 유연한 타입 정의
+
+  **설계 원칙**:
+  - 모든 엔티티는 BaseEntity 상속
+  - Enum으로 상수 값 타입 안전성 확보
+  - Interface로 확장 가능한 구조
+  - 제네릭으로 유연성 제공
+  - Optional 필드로 유연성 확보
+
+  **사용 예시**:
+  ```typescript
+  // 엔티티 사용
+  const user: User = {
+    id: 'uuid-123',
+    name: '홍길동',
+    email: 'hong@example.com',
+    phone: '010-1234-5678',
+    role: 'campground_owner',
+    createdAt: '2025-01-01T00:00:00Z',
+    updatedAt: '2025-01-01T00:00:00Z'
+  }
+
+  // API 응답 사용
+  const response: ApiResponse<User> = {
+    success: true,
+    data: user
+  }
+
+  // 페이지네이션 응답 사용
+  const paginatedResponse: PaginatedResponse<Campground> = {
+    success: true,
+    data: [campground1, campground2],
+    pagination: {
+      page: 1,
+      limit: 10,
+      total: 50,
+      totalPages: 5
+    }
+  }
+
+  // 폼 상태 사용
+  const formState: FormState<{ name: string, email: string }> = {
+    data: { name: '', email: '' },
+    errors: {},
+    isSubmitting: false,
+    isValid: false
+  }
+
+  // 테이블 컬럼 사용
+  const columns: TableColumn<Campground>[] = [
+    { key: 'name', label: '캠핑장명', sortable: true },
+    { key: 'status', label: '상태', render: (v) => <Badge>{v}</Badge> }
+  ]
+  ```
+end legend
+
+@enduml
