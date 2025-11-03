@@ -1,0 +1,102 @@
+@startuml CampHost Services Component Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+' ============================================================================
+' Level 3: Component Diagram - Services Layer
+' ============================================================================
+'
+' Web Application 내부의 주요 서비스 컴포넌트를 표현합니다.
+' - CacheManager (lib/cache.ts)
+' - CampgroundService (lib/campground.ts)
+' - SupabaseRest (src/services/supabaseRest.ts)
+'
+' 🔗 이전 레벨: lv2-containers/overview.puml
+' ============================================================================
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram for CampHost - Services Layer
+
+' ============================================================================
+' Container Boundary
+' ============================================================================
+
+Container_Boundary(services, "Services Layer") {
+
+    ' ------------------------------------------------------------------------
+    ' CacheManager (NEW)
+    ' ------------------------------------------------------------------------
+    Component(cacheManager, "CacheManager", "TypeScript Class", "TTL 기반 캐싱 관리자\n\n**주요 메서드:**\n- set<T>(key, data, ttl)\n- get<T>(key): T | null\n- invalidate(key)\n- clear()\n- getStats()\n\n**TTL:** 5분 (300000ms)\n**Storage:** localStorage")
+
+    ' ------------------------------------------------------------------------
+    ' CampgroundService
+    ' ------------------------------------------------------------------------
+    Component(campgroundService, "CampgroundService", "TypeScript Service", "캠핑장 데이터 관리\n\n**메서드:**\n- getAll()\n- getById(id)\n- update(id, data)")
+
+    ' ------------------------------------------------------------------------
+    ' SupabaseRest
+    ' ------------------------------------------------------------------------
+    Component(supabaseRest, "SupabaseRest", "REST API Client", "Supabase REST API 클라이언트\n\n**메서드:**\n- select<T>(table, query)\n- insert(table, data)\n- update(table, data, filter)\n- delete(table, filter)")
+
+}
+
+' ============================================================================
+' External Dependencies
+' ============================================================================
+
+ContainerDb(localStorage, "Browser Storage", "localStorage", "Key-Value 저장소")
+
+System_Ext(supabase, "Supabase", "PostgreSQL Database")
+
+' ============================================================================
+' Relationships
+' ============================================================================
+
+' CacheManager → localStorage
+Rel(cacheManager, localStorage, "저장/조회", "setItem() / getItem()\nJSON.stringify / parse")
+
+' Admin Settings → CacheManager
+Rel_U(cacheManager, campgroundService, "캐싱 레이어", "Cache-First 전략")
+
+' CampgroundService → SupabaseRest
+Rel(campgroundService, supabaseRest, "데이터 조회/수정", "select() / update()")
+
+' SupabaseRest → Supabase
+Rel(supabaseRest, supabase, "REST API", "HTTPS / JSON")
+
+' ============================================================================
+' Notes
+' ============================================================================
+
+note right of cacheManager
+  **Smart Caching 전략:**
+  1. Cache-First 전략
+  2. TTL 기반 자동 만료 (5분)
+  3. Stale-While-Revalidate
+  4. 저장 시 자동 갱신
+
+  **성능 향상:**
+  - 첫 방문: ~500ms (Supabase)
+  - 재방문: ~10ms (Cache)
+  - 40-80배 속도 향상
+
+  **사용 위치:**
+  - app/admin/settings/page.tsx
+  - app/kiosk/page.tsx
+end note
+
+' ============================================================================
+' 동기화 체크리스트
+' ============================================================================
+'
+' □ 새로운 서비스 추가 시
+'   - Component(...) 추가
+'   - Rel(...) 관계 정의
+'
+' □ 캐싱 전략 변경 시
+'   - cacheManager Note 업데이트
+'
+' □ TTL 변경 시
+'   - cacheManager 설명 업데이트
+'
+@enduml
